@@ -44,12 +44,13 @@ def invert(bin_str):
 
 def split_parts(line):
     # Tách chuỗi dựa trên nhiều ký tự phân cách như khoảng trắng, dấu phẩy, dấu hai chấm
-    parts = re.split(r'\s+|,|:|#', line)
+    parts = re.split(r'\s+|,|:', line)
 
     # Bỏ qua các phần tử rỗng sau khi tách
     parts = [part for part in parts if part.strip()]
 
     return parts
+#thêm phần check #2 mới chấp nhận còn 2 không thì lỗi
         
 def check_assembly_line(self, line):
     parts = split_parts(line)
@@ -89,10 +90,11 @@ def check_assembly_line(self, line):
     return reg, arguments
     
 def MOV(mem, arguments):
-    pattern_const = re.compile(r"^-?\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     if pattern_const.match(mem[0]):
-        num = int(mem[0])
+        clean_mem = mem[0].lstrip('#')
+        num = int(clean_mem)
         num = Encoder(num)
         arguments.append(num)
         return arguments
@@ -105,14 +107,16 @@ def MOV(mem, arguments):
         return arguments
     else:
         return None
+#sửa lại kiểm tra const có dấu # phía trước số không, có thì tách dấu # ra
         
 def LSR(mem, arguments):
-    pattern_const = re.compile(r"^\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
         line_edit = line_edit_dict.get(mem[0])
         binary_str = line_edit.text()
-        num = int(mem[1])
+        num = int(clean_mem)
         result = r_shift_32(binary_str, num)
         result = Decoder(result)
         result = Encoder(result)
@@ -133,12 +137,13 @@ def LSR(mem, arguments):
         return None
         
 def LSL(mem, arguments):
-    pattern_const = re.compile(r"^\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
         line_edit = line_edit_dict.get(mem[0])
         binary_str = line_edit.text()
-        num = int(mem[1])
+        num = int(clean_mem)
         result = l_shift_32(binary_str, num)
         result = Decoder(result)
         result = Encoder(result)
@@ -159,12 +164,13 @@ def LSL(mem, arguments):
         return None
         
 def ASR(mem, arguments):
-    pattern_const = re.compile(r"^\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
         line_edit = line_edit_dict.get(mem[0])
         binary_str = line_edit.text()
-        num = int(mem[1])
+        num = int(clean_mem)
         result = asr_shift_32(binary_str, num)
         result = Decoder(result)
         result = Encoder(result)
@@ -185,12 +191,13 @@ def ASR(mem, arguments):
         return None
     
 def ROR(mem, arguments):
-    pattern_const = re.compile(r"^\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
         line_edit = line_edit_dict.get(mem[0])
         binary_str = line_edit.text()
-        num = int(mem[1])
+        num = int(clean_mem)
         result = ror_shift_32(binary_str, num)
         result = Decoder(result)
         result = Encoder(result)
@@ -211,13 +218,14 @@ def ROR(mem, arguments):
         return None
     
 def AND(mem, arguments):
-    pattern_const = re.compile(r"^\d+$")
+    pattern_const = re.compile(r"^#-?\d+$")
     pattern_register = re.compile(r"^r\d+$")
     pattern_command = re.compile(r"^\s*(LSL|LSR|ASR|ROR)$", re.IGNORECASE)
     if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
         line_edit = line_edit_dict.get(mem[0])
         binary_str = line_edit.text()
-        num = int(mem[1])
+        num = int(clean_mem)
         num_str = Encoder(num)
         result = and_32(binary_str, num_str)
         result = Decoder(result)
@@ -230,7 +238,8 @@ def AND(mem, arguments):
         line_edit_2 = line_edit_dict.get(mem[1])
         binary_str_2 = line_edit_2.text()
         if pattern_command.match(mem[2]):
-            num = int(mem[3])
+            clean_mem = mem[3].lstrip('#')
+            num = int(clean_mem)
             if (mem[2].lower() == "lsr"):
                 binary_str_2 = r_shift_32(binary_str_2, num)
             elif (mem[2].lower() == "lsl"):
