@@ -10,7 +10,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 import re
 import sys
 from Assembly import check_assembly_line
-from dict import line_edit_dict
+from dict import line_edit_dict, conditon_dict
 from encoder import Encoder
 from decoder import Decoder
 
@@ -216,6 +216,11 @@ class Ui_MainWindow(object):
         self.v_LineEdit.setObjectName("v_LineEdit")
         self.Layout_condition.setWidget(3, QtWidgets.QFormLayout.ItemRole.FieldRole, self.v_LineEdit)
         
+        conditon_dict["n"] = self.n_LineEdit
+        conditon_dict["z"] = self.z_LineEdit
+        conditon_dict["c"] = self.c_LineEdit
+        conditon_dict["v"] = self.v_LineEdit
+        
         self.tabWidget.addTab(self.tab_1, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
@@ -315,7 +320,7 @@ class Ui_MainWindow(object):
                     line_edit = line_edit_dict.get(reg)
                     line_edit.setText(arguments[0])
                 else:
-                    print("Lệnh ở dòng {index} không hợp lệ")
+                    print("Lệnh ở dòng " + str(index) + " không hợp lệ")
                 
     def Restart(self):
         self.CodeEditText.setText("")
@@ -329,5 +334,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec())
-    
-    # Xem giùm dòng code 330

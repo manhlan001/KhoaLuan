@@ -7,10 +7,6 @@ def Encoder(number):
         return binary_32
     
     else:
-        # Số âm cần chuyển đổi
-        negative_number = -42
-        # Chuyển đổi thành nhị phân
-        negative_binary_str = bin(negative_number & 0xFFFFFFFF)  # Sử dụng mask để đảm bảo 32 bit
-        # Loại bỏ '0b' và điền đủ 32 bit
+        negative_binary_str = bin(number & 0xFFFFFFFF)
         negative_binary_32 = negative_binary_str[2:].zfill(32)
         return negative_binary_32
