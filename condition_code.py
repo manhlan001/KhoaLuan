@@ -16,4 +16,8 @@ condition_dict = {
     "al", "<omit>"          #Always any
 }
 
-#Giải thích
+def check_N(result_str):
+    if result_str[0] == '1': return True
+    
+def check_Z(result_str):
+    if int(result_str, 2) == 0: return True

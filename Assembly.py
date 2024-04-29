@@ -1,46 +1,14 @@
 import re
 import sys
-from dict import line_edit_dict, common_dict, l_shift_32, r_shift_32, asr_shift_32, ror_shift_32, and_32
+from dict import line_edit_dict, conditon_dict, and_32, or_32, xor_32, complement
+import dict
 from encoder import Encoder
 from decoder import Decoder
 
-VALID_COMMAND_REGEX = re.compile(r"\b(MOV|TEQ|BX|PUSH|CMP|NEG|CLZ|LSL|RSB|UDIV|POP|MLS|B|SUB|ADD)(\w*)", re.IGNORECASE)
-CONDITIONAL_MODIFIER_REGEX = re.compile(r"\b(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE)(\_W|\_L)?\b", re.IGNORECASE)
-
-def is_int_str(val):
-    """returns whether a value is an integer string or not"""
-    try: 
-        to_int(val)
-        return True
-    except Exception:
-        return False
-
-def to_int(val):
-    """changes val to an integer, where val is a decimal, binary, or hex string"""
-    assert val[0] == "#"
-    val = val[1:]
-    if val.isdigit():
-        return int(val)
-    if val[:2] == '0b':
-        return int(val,2)
-    if val[:2] == '0x':
-        return int(val,16)
-    raise Exception
-    
-def detect_overflow(a,b,res):
-    """detects overflow, returns '0b0' or '0b1' depending on whether overflow occurred"""
-    a_sign = a[2]
-    b_sign = b[2]
-    res_sign = res[2]
-    if a_sign == b_sign and b_sign != res_sign:
-        return '0b1'
-    return '0b0'
-
-def invert(bin_str):
-    """inverts binary string of any length. expects it in the format of '0b...'. This particularly nifty list comprehension found on http://stackoverflow.com/questions/3920494/python-flipping-binary-1s-and-0s-in-a-string"""
-    assert isinstance(bin_str,str)
-    raw_num = bin_str[2:]
-    return '0b'+''.join('1' if x == '0' else '0' for x in raw_num)
+VALID_COMMAND_REGEX = re.compile(r"(MOV|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
+CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE)", re.IGNORECASE)
+SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
+FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
 
 def split_parts(line):
     # Tách chuỗi dựa trên nhiều ký tự phân cách như khoảng trắng, dấu phẩy, dấu hai chấm
@@ -50,7 +18,6 @@ def split_parts(line):
     parts = [part for part in parts if part.strip()]
 
     return parts
-#thêm phần check #2 mới chấp nhận còn 2 không thì lỗi
         
 def check_assembly_line(self, line):
     parts = split_parts(line)
@@ -71,151 +38,206 @@ def check_assembly_line(self, line):
     instruction = parts[0]
     reg = parts[1]
     mem = parts[2:]
-    
     arguments = []
-        
+    
+    regex_register = re.compile(r"r\d+$")
+    regex_const = re.compile(r"#-?\d+$")
+    
+    flag_N = flag_Z = flag_C = flag_V = "0"
+    
+    if regex_register.match(reg):
+        match_instruction = re.search(VALID_COMMAND_REGEX, instruction)
+        if match_instruction:
+            instruction_clean = match_instruction.group(0)
+            instruction = re.sub(match_instruction.group(0), "", instruction)
+            match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+            if match_condition:
+                return None, None, flag_N, flag_Z, flag_C, flag_V
+            else:
+                match_flag = re.search(FLAG_REGEX, instruction)
+                if match_flag:
+                    instruction = instruction.lstrip(match_flag.group(0))
+                    if not instruction:
+                        temporary = []
+                        for mem in mem:
+                            if regex_const.match(mem):
+                                clean_num = mem.lstrip('#')
+                                num = int(clean_num)
+                                num_string = Encoder(num)
+                                temporary.append(num_string)
+                            elif regex_register.match(mem):
+                                line_edit = line_edit_dict.get(mem)
+                                binary_str = line_edit.text()
+                                binary_str = Decoder(binary_str)
+                                binary_str = Encoder(binary_str)
+                                temporary.append(binary_str)
+                        if SHIFT_REGEX.match(instruction_clean):
+                            arguments, flag_C = Check_Command_With_Flag(temporary, instruction_clean)
+                        else:
+                            arguments = Check_Command(temporary, instruction_clean)
+                            
+                        result = arguments[0]
+                        flag_N = result[0]
+                        if Decoder(result) == 0: flag_Z = '1'
+                    else:
+                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                else:
+                    if not instruction:
+                        temporary = []
+                        for mem in mem:
+                            if regex_const.match(mem):
+                                clean_num = mem.lstrip('#')
+                                num = int(clean_num)
+                                num_string = Encoder(num)
+                                temporary.append(num_string)
+                            elif regex_register.match(mem):
+                                line_edit = line_edit_dict.get(mem)
+                                binary_str = line_edit.text()
+                                binary_str = Decoder(binary_str)
+                                binary_str = Encoder(binary_str)
+                                temporary.append(binary_str)
+                        arguments = Check_Command(temporary, instruction_clean)
+                    else:
+                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                        
+                return reg, arguments, flag_N, flag_Z, flag_C, flag_V
+        else:
+            return None, None, flag_N, flag_Z, flag_C, flag_V
+    else:
+        return None, None, flag_N, flag_Z, flag_C, flag_V
+    
+def Check_Command(temporary, instruction):
+    arguments = []
     if(instruction.lower() == "mov"):
-        arguments = MOV(mem, arguments)
+        arguments = MOV(temporary)
     elif (instruction.lower() == "lsr"):
-        arguments = LSR(mem, arguments)
+        arguments = LSR(temporary)
     elif (instruction.lower() == "lsl"):
-        arguments = LSL(mem, arguments)
+        arguments = LSL(temporary)
     elif (instruction.lower() == "asr"):
-        arguments = ASR(mem, arguments)
+        arguments = ASR(temporary)
     elif (instruction.lower() == "ror"):
-        arguments = ROR(mem, arguments)
-    elif (instruction.lower() == "and"):
-        arguments = AND(mem, arguments)
-    
-    return reg, arguments
-    
-def MOV(mem, arguments):
-    pattern_const = re.compile(r"^#-?\d+$")
-    pattern_register = re.compile(r"^r\d+$")
-    if pattern_const.match(mem[0]):
-        clean_mem = mem[0].lstrip('#')
-        num = int(clean_mem)
-        num = Encoder(num)
-        arguments.append(num)
-        return arguments
-    elif pattern_register.match(mem[0]):
-        line_edit = line_edit_dict.get(mem[0])
-        binary_str = line_edit.text()
-        binary_str = Decoder(binary_str)
-        binary_str = Encoder(binary_str)
-        arguments.append(binary_str)
-        return arguments
-    else:
+        arguments = ROR(temporary)
+    elif (instruction.lower() == "rrx"):
+        arguments = RRX(temporary)
+    #elif (instruction.lower() == "and"):
+    #    arguments = AND(mem, arguments)
+    #elif (instruction.lower() == "bic"):
+    #    arguments = BIC(mem, arguments)
+    #elif (instruction.lower() == "orr"):
+    #    arguments = ORR(mem, arguments)
+    #elif (instruction.lower() == "orn"):
+    #    arguments = ORN(mem, arguments)
+    #elif (instruction.lower() == "eor"):
+    #    arguments = EOR(mem, arguments)
+    return arguments
+
+def Check_Command_With_Flag(temporary, instruction):
+    arguments = []
+    if (instruction.lower() == "lsr"):
+        arguments = LSR_C(temporary)
+    elif (instruction.lower() == "lsl"):
+        arguments = LSL_C(temporary)
+    elif (instruction.lower() == "asr"):
+        arguments = ASR_C(temporary)
+    elif (instruction.lower() == "ror"):
+        arguments = ROR_C(temporary)
+    elif (instruction.lower() == "rrx"):
+        arguments = RRX_C(temporary)
+    return arguments
+
+def MOV(temporary):
+    result = temporary
+    return result
+
+def LSR(temporary):
+    if len(temporary) < 2:
         return None
-#sửa lại kiểm tra const có dấu # phía trước số không, có thì tách dấu # ra
+    else:
+        num = Decoder(temporary[1])
+        result, _ = dict.r_shift_32_c(temporary[0], num)
+        return result
         
-def LSR(mem, arguments):
-    pattern_const = re.compile(r"^#-?\d+$")
-    pattern_register = re.compile(r"^r\d+$")
-    if pattern_const.match(mem[1]):
-        clean_mem = mem[1].lstrip('#')
-        line_edit = line_edit_dict.get(mem[0])
-        binary_str = line_edit.text()
-        num = int(clean_mem)
-        result = r_shift_32(binary_str, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
-    elif pattern_register.match(mem[1]):
-        line_edit_1 = line_edit_dict.get(mem[0])
-        binary_str_1 = line_edit_1.text()
-        line_edit_2 = line_edit_dict.get(mem[1])
-        binary_str_2 = line_edit_2.text()
-        num = Decoder(binary_str_2)
-        result = r_shift_32(binary_str_1, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
+def LSR_C(temporary):
+    if len(temporary) < 2:
+        carry = '0'
+        return None, carry
     else:
-        return None
+        num = Decoder(temporary[1])
+        result, carry = dict.r_shift_32_c(temporary[0], num)
+        return result, carry
         
-def LSL(mem, arguments):
-    pattern_const = re.compile(r"^#-?\d+$")
-    pattern_register = re.compile(r"^r\d+$")
-    if pattern_const.match(mem[1]):
-        clean_mem = mem[1].lstrip('#')
-        line_edit = line_edit_dict.get(mem[0])
-        binary_str = line_edit.text()
-        num = int(clean_mem)
-        result = l_shift_32(binary_str, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
-    elif pattern_register.match(mem[1]):
-        line_edit_1 = line_edit_dict.get(mem[0])
-        binary_str_1 = line_edit_1.text()
-        line_edit_2 = line_edit_dict.get(mem[1])
-        binary_str_2 = line_edit_2.text()
-        num = Decoder(binary_str_2)
-        result = l_shift_32(binary_str_1, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
+def LSL(temporary):
+    if len(temporary) < 2:
+        return None
     else:
-        return None
+        num = Decoder(temporary[1])
+        result, _ = dict.l_shift_32_c(temporary[0], num)
+        return result
+
+def LSL_C(temporary):
+    if len(temporary) < 2:
+        carry = '0'
+        return None, carry
+    else:
+        num = Decoder(temporary[1])
+        result, carry = dict.l_shift_32_c(temporary[0], num)
+        return result, carry
         
-def ASR(mem, arguments):
-    pattern_const = re.compile(r"^#-?\d+$")
-    pattern_register = re.compile(r"^r\d+$")
-    if pattern_const.match(mem[1]):
-        clean_mem = mem[1].lstrip('#')
-        line_edit = line_edit_dict.get(mem[0])
-        binary_str = line_edit.text()
-        num = int(clean_mem)
-        result = asr_shift_32(binary_str, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
-    elif pattern_register.match(mem[1]):
-        line_edit_1 = line_edit_dict.get(mem[0])
-        binary_str_1 = line_edit_1.text()
-        line_edit_2 = line_edit_dict.get(mem[1])
-        binary_str_2 = line_edit_2.text()
-        num = Decoder(binary_str_2)
-        result = asr_shift_32(binary_str_1, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
+def ASR(temporary):
+    if len(temporary) < 2:
+        return None
+    else:
+        num = Decoder(temporary[1])
+        result, _ = dict.asr_shift_32_c(temporary[0], num)
+        return result
+    
+def ASR_C(temporary):
+    if len(temporary) < 2:
+        carry = '0'
+        return None, carry
+    else:
+        num = Decoder(temporary[1])
+        result, carry = dict.asr_shift_32_c(temporary[0], num)
+        return result, carry
+    
+def ROR(temporary):
+    if len(temporary) < 2:
+        return None
+    else:
+        num = Decoder(temporary[1])
+        result, _ = dict.ror_shift_32_c(temporary[0], num)
+        return result
+    
+def ROR_C(temporary):
+    if len(temporary) < 2:
+        carry = '0'
+        return None, carry
+    else:
+        num = Decoder(temporary[1])
+        result, carry = dict.ror_shift_32_c(temporary[0], num)
+        return result, carry
+    
+def RRX(temporary):
+    if len(temporary) == 1:
+        carry_in = conditon_dict.get("c")
+        carry_in = carry_in.text()
+        result, _ = dict.rrx_shift_32_c(temporary[0], carry_in)
+        print(result)
+        return result
     else:
         return None
     
-def ROR(mem, arguments):
-    pattern_const = re.compile(r"^#-?\d+$")
-    pattern_register = re.compile(r"^r\d+$")
-    if pattern_const.match(mem[1]):
-        clean_mem = mem[1].lstrip('#')
-        line_edit = line_edit_dict.get(mem[0])
-        binary_str = line_edit.text()
-        num = int(clean_mem)
-        result = ror_shift_32(binary_str, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
-    elif pattern_register.match(mem[1]):
-        line_edit_1 = line_edit_dict.get(mem[0])
-        binary_str_1 = line_edit_1.text()
-        line_edit_2 = line_edit_dict.get(mem[1])
-        binary_str_2 = line_edit_2.text()
-        num = Decoder(binary_str_2)
-        result = ror_shift_32(binary_str_1, num)
-        result = Decoder(result)
-        result = Encoder(result)
-        arguments.append(result)
-        return arguments
+def RRX_C(temporary):
+    if len(temporary) == 1:
+        carry_in = conditon_dict.get("c")
+        carry_in = carry_in.text()
+        result, carry = dict.rrx_shift_32_c(temporary[0], carry_in)
+        print(result)
+        return result, carry
     else:
-        return None
+        carry = '0'
+        return None, carry
     
 def AND(mem, arguments):
     pattern_const = re.compile(r"^#-?\d+$")
@@ -237,24 +259,282 @@ def AND(mem, arguments):
         binary_str_1 = line_edit_1.text()
         line_edit_2 = line_edit_dict.get(mem[1])
         binary_str_2 = line_edit_2.text()
-        if pattern_command.match(mem[2]):
-            clean_mem = mem[3].lstrip('#')
-            num = int(clean_mem)
-            if (mem[2].lower() == "lsr"):
-                binary_str_2 = r_shift_32(binary_str_2, num)
-            elif (mem[2].lower() == "lsl"):
-                binary_str_2 = l_shift_32(binary_str_2, num)
-            elif (mem[2].lower() == "asr"):
-                binary_str_2 = asr_shift_32(binary_str_2, num)
-            elif (mem[2].lower() == "ror"):
-                binary_str_2 = ror_shift_32(binary_str_2, num)
+        if(len(mem) < 3):
+            result = and_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+        elif pattern_command.match(mem[2]):
+            if pattern_const.match(mem[3]):
+                clean_mem = mem[3].lstrip('#')
+                num = int(clean_mem)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            elif pattern_register.match(mem[3]):
+                line_edit_3 = line_edit_dict.get(mem[3])
+                binary_str_3 = line_edit_3.text()
+                num = Decoder(binary_str_3)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
                 
             result = and_32(binary_str_1, binary_str_2)
             result = Decoder(result)
             result = Encoder(result)
             arguments.append(result)
-        else:
+            
+        return arguments
+    else:
+        return None
+    
+def BIC(mem, arguments):
+    pattern_const = re.compile(r"^#-?\d+$")
+    pattern_register = re.compile(r"^r\d+$")
+    pattern_command = re.compile(r"^\s*(LSL|LSR|ASR|ROR)$", re.IGNORECASE)
+    if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
+        line_edit = line_edit_dict.get(mem[0])
+        binary_str = line_edit.text()
+        num = int(clean_mem)
+        num_str = Encoder(num)
+        num_str = complement(num_str)
+        result = and_32(binary_str, num_str)
+        result = Decoder(result)
+        result = Encoder(result)
+        arguments.append(result)
+        return arguments
+    elif pattern_register.match(mem[1]):
+        line_edit_1 = line_edit_dict.get(mem[0])
+        binary_str_1 = line_edit_1.text()
+        line_edit_2 = line_edit_dict.get(mem[1])
+        binary_str_2 = line_edit_2.text()
+        if(len(mem) < 3):
+            binary_str_2 = complement(binary_str_2)  
             result = and_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+        elif pattern_command.match(mem[2]):
+            if pattern_const.match(mem[3]):
+                clean_mem = mem[3].lstrip('#')
+                num = int(clean_mem)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            elif pattern_register.match(mem[3]):
+                line_edit_3 = line_edit_dict.get(mem[3])
+                binary_str_3 = line_edit_3.text()
+                num = Decoder(binary_str_3)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            
+            binary_str_2 = complement(binary_str_2)    
+            result = and_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+            
+        return arguments
+    else:
+        return None
+    
+def ORR(mem, arguments):
+    pattern_const = re.compile(r"^#-?\d+$")
+    pattern_register = re.compile(r"^r\d+$")
+    pattern_command = re.compile(r"^\s*(LSL|LSR|ASR|ROR)$", re.IGNORECASE)
+    if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
+        line_edit = line_edit_dict.get(mem[0])
+        binary_str = line_edit.text()
+        num = int(clean_mem)
+        num_str = Encoder(num)
+        result = or_32(binary_str, num_str)
+        result = Decoder(result)
+        result = Encoder(result)
+        arguments.append(result)
+        return arguments
+    elif pattern_register.match(mem[1]):
+        line_edit_1 = line_edit_dict.get(mem[0])
+        binary_str_1 = line_edit_1.text()
+        line_edit_2 = line_edit_dict.get(mem[1])
+        binary_str_2 = line_edit_2.text()
+        if pattern_command.match(mem[2]):
+            if pattern_const.match(mem[3]):
+                clean_mem = mem[3].lstrip('#')
+                num = int(clean_mem)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            elif pattern_register.match(mem[3]):
+                line_edit_3 = line_edit_dict.get(mem[3])
+                binary_str_3 = line_edit_3.text()
+                num = Decoder(binary_str_3)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+                
+            result = or_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+        else:
+            result = or_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+            
+        return arguments
+    else:
+        return None
+    
+def ORN(mem, arguments):
+    pattern_const = re.compile(r"^#-?\d+$")
+    pattern_register = re.compile(r"^r\d+$")
+    pattern_command = re.compile(r"^\s*(LSL|LSR|ASR|ROR)$", re.IGNORECASE)
+    if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
+        line_edit = line_edit_dict.get(mem[0])
+        binary_str = line_edit.text()
+        num = int(clean_mem)
+        num_str = Encoder(num)
+        num_str = complement(num_str)
+        result = or_32(binary_str, num_str)
+        result = Decoder(result)
+        result = Encoder(result)
+        arguments.append(result)
+        return arguments
+    elif pattern_register.match(mem[1]):
+        line_edit_1 = line_edit_dict.get(mem[0])
+        binary_str_1 = line_edit_1.text()
+        line_edit_2 = line_edit_dict.get(mem[1])
+        binary_str_2 = line_edit_2.text()
+        if pattern_command.match(mem[2]):
+            if pattern_const.match(mem[3]):
+                clean_mem = mem[3].lstrip('#')
+                num = int(clean_mem)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            elif pattern_register.match(mem[3]):
+                line_edit_3 = line_edit_dict.get(mem[3])
+                binary_str_3 = line_edit_3.text()
+                num = Decoder(binary_str_3)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            
+            binary_str_2 = complement(binary_str_2)    
+            result = or_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+        else:
+            binary_str_2 = complement(binary_str_2)    
+            result = or_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+            
+        return arguments
+    else:
+        return None
+    
+def EOR(mem, arguments):
+    pattern_const = re.compile(r"^#-?\d+$")
+    pattern_register = re.compile(r"^r\d+$")
+    pattern_command = re.compile(r"^\s*(LSL|LSR|ASR|ROR)$", re.IGNORECASE)
+    if pattern_const.match(mem[1]):
+        clean_mem = mem[1].lstrip('#')
+        line_edit = line_edit_dict.get(mem[0])
+        binary_str = line_edit.text()
+        num = int(clean_mem)
+        num_str = Encoder(num)
+        num_str = complement(num_str)
+        result = xor_32(binary_str, num_str)
+        result = Decoder(result)
+        result = Encoder(result)
+        arguments.append(result)
+        return arguments
+    elif pattern_register.match(mem[1]):
+        line_edit_1 = line_edit_dict.get(mem[0])
+        binary_str_1 = line_edit_1.text()
+        line_edit_2 = line_edit_dict.get(mem[1])
+        binary_str_2 = line_edit_2.text()
+        if pattern_command.match(mem[2]):
+            if pattern_const.match(mem[3]):
+                clean_mem = mem[3].lstrip('#')
+                num = int(clean_mem)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            elif pattern_register.match(mem[3]):
+                line_edit_3 = line_edit_dict.get(mem[3])
+                binary_str_3 = line_edit_3.text()
+                num = Decoder(binary_str_3)
+                if (mem[2].lower() == "lsr"):
+                    binary_str_2 = r_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "lsl"):
+                    binary_str_2 = l_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "asr"):
+                    binary_str_2 = asr_shift_32(binary_str_2, num)
+                elif (mem[2].lower() == "ror"):
+                    binary_str_2 = ror_shift_32(binary_str_2, num)
+            
+            binary_str_2 = complement(binary_str_2)    
+            result = xor_32(binary_str_1, binary_str_2)
+            result = Decoder(result)
+            result = Encoder(result)
+            arguments.append(result)
+        else:
+            binary_str_2 = complement(binary_str_2)    
+            result = xor_32(binary_str_1, binary_str_2)
             result = Decoder(result)
             result = Encoder(result)
             arguments.append(result)
