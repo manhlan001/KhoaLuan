@@ -1,3 +1,5 @@
+from decoder import Decoder
+from encoder import Encoder
 line_edit_dict = {
     "r0": None,
     "r1": None,
@@ -58,12 +60,12 @@ def l_shift_32_c(a, shift_val):
     if shift_val == 0:
         carry = '0'
     else:
-        carry = a[0] 
-    shifted_str = a[shift_val:] + '0' * shift_val
-    assert len(shifted_str) == 32
-    result.append(shifted_str)
+        for i in range(shift_val):
+            carry = a[0]
+            a = a[1:] + '0'
+    result.append(a)
     return result, carry
-    
+
 def r_shift_32_c(a, shift_val):
     result = []
     assert isinstance(a, str) and isinstance(shift_val, int)
@@ -73,10 +75,10 @@ def r_shift_32_c(a, shift_val):
     if shift_val == 0:
         carry = '0'
     else:
-        carry = a[31] 
-    shifted_str = '0' * shift_val + a[:-shift_val]
-    assert len(shifted_str) == 32
-    result.append(shifted_str)
+        for i in range(shift_val):
+            carry = a[-1]
+            a = '0' + a[:-1]
+    result.append(a)
     return result, carry
 
 def asr_shift_32_c(a, shift_val):
@@ -84,53 +86,80 @@ def asr_shift_32_c(a, shift_val):
     assert isinstance(a, str) and isinstance(shift_val, int)
     assert len(a) == 32
     assert 0 <= shift_val <= 32
+    sign_bit = a[0]
     carry = None
     if shift_val == 0:
         carry = '0'
     else:
-        carry = a[31]
-    sign_bit = a[0]
-    shifted_str = sign_bit * shift_val + a[:-shift_val]
-    assert len(shifted_str) == 32
-    result.append(shifted_str)
+        for i in range(shift_val):
+            carry = a[-1]
+            a = sign_bit + a[:-1]
+    result.append(a)
     return result, carry
+
+def ror_shift_32_c(a, shift_val):
+    result = []
+    assert isinstance(a, str) and isinstance(shift_val, int)
+    assert len(a) == 32
+    assert 0 <= shift_val <= 32
+    if shift_val == 0:
+        carry = '0'
+    else:
+        for i in range(shift_val):
+            carry = a[-1]
+            a = a[-1:] + a[:-1]
+    result.append(a)
+    return result, carry
+
 
 def rrx_shift_32_c(a, carry_in):
     result = []
     assert isinstance(a, str) and len(a) == 32
     assert isinstance(carry_in, str) and len(carry_in) == 1
-    shifted_str = carry_in + a[:-1]
     carry_out = a[-1]
+    shifted_str = carry_in + a[:-1]
     assert len(shifted_str) == 32
     result.append(shifted_str)
     return result, carry_out
 
 def and_32(str1, str2):
+    result = []
     assert isinstance(str1, str) and isinstance(str2, str)
     assert len(str1) == 32 and len(str2) == 32
     num1 = int(str1, 2)
     num2 = int(str2, 2)
-    result = num1 & num2
-    result_str = f"{result:032b}"
-    return result_str
+    result_int = num1 & num2
+    result_str = f"{result_int:032b}"
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result
 
 def or_32(str1, str2):
+    result = []
     assert isinstance(str1, str) and isinstance(str2, str)
     assert len(str1) == 32 and len(str2) == 32
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
-    result = num1 | num2  
-    result_str = f"{result:032b}" 
-    return result_str
+    result_int = num1 | num2  
+    result_str = f"{result_int:032b}" 
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result
 
 def xor_32(str1, str2):
+    result = []
     assert isinstance(str1, str) and isinstance(str2, str)
     assert len(str1) == 32 and len(str2) == 32
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
-    result = num1 ^ num2
-    result_str = f"{result:032b}" 
-    return result_str
+    result_int = num1 ^ num2
+    result_str = f"{result_int:032b}" 
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result
 
 def complement(binary_str):
     assert isinstance(binary_str, str)
