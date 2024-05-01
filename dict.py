@@ -161,19 +161,61 @@ def xor_32(str1, str2):
     result.append(result_str)
     return result
 
+def cmp_32(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)  
+    num2 = int(str2, 2)  
+    result_int = num1 - num2
+    carry = '1' if result_int >= 0 else '0'
+    result_str = f"{result_int:032b}"
+    overflow = detect_overflow_sub(str1, str2, result_str)
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result, carry, overflow
+
+def detect_overflow_sub(a, b, res):
+    a_sign = a[0]
+    b_sign = b[0]
+    res_sign = res[0]
+    if a_sign != b_sign and a_sign != res_sign:
+        return '1'
+    return '0'
+
+def cmn_32(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)  
+    num2 = int(str2, 2)  
+    result_int = num1 + num2
+    carry = '1' if (result_int >> 32) & 1 else '0'
+    result_str = f"{result_int & ((1 << 32) - 1):032b}"
+    overflow = detect_overflow_add(str1, str2, result_str)
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result, carry, overflow
+
+def detect_overflow_add(a, b, res):
+    a_sign = a[0]
+    b_sign = b[0]
+    res_sign = res[0]
+    if a_sign == b_sign and a_sign != res_sign:
+        return '1'
+    return '0'
+
 def complement(binary_str):
     assert isinstance(binary_str, str)
     assert all(bit in '01' for bit in binary_str)
     complement_str = ''.join('1' if bit == '0' else '0' for bit in binary_str)
     return complement_str
-
-def detect_overflow(a,b,res):
-    """detects overflow, returns '0b0' or '0b1' depending on whether overflow occurred"""
-    a_sign = a[2]
-    b_sign = b[2]
-    res_sign = res[2]
-    if a_sign == b_sign and b_sign != res_sign:
-        return '0b1'
-    return '0b0'
-
     

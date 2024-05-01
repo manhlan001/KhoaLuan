@@ -315,7 +315,7 @@ class Ui_MainWindow(object):
         # Kiểm tra từng dòng và in ra trạng thái của chúng
         for index, line in enumerate(lines, start=1):
             if line.strip():  # Nếu dòng không phải là rỗng
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V = check_assembly_line(self, line)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = check_assembly_line(self, line)
                 if(arguments != None):
                     line_edit = line_edit_dict.get(reg)
                     line_edit.setText(arguments[0])
@@ -328,7 +328,15 @@ class Ui_MainWindow(object):
                     c_edit.setText(flag_C)
                     v_edit = conditon_dict.get("v")
                     v_edit.setText(flag_V)
-                    
+                elif arguments == None and flag_T != None:
+                    n_edit = conditon_dict.get("n")
+                    n_edit.setText(flag_N)
+                    z_edit = conditon_dict.get("z")
+                    z_edit.setText(flag_Z)
+                    c_edit = conditon_dict.get("c")
+                    c_edit.setText(flag_C)
+                    v_edit = conditon_dict.get("v")
+                    v_edit.setText(flag_V)    
                 else:
                     print("Lệnh ở dòng " + str(index) + " không hợp lệ")
                 

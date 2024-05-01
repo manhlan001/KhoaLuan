@@ -1,12 +1,13 @@
 import re
 import sys
-from dict import line_edit_dict, conditon_dict, and_32, or_32, xor_32, complement
+from dict import line_edit_dict, conditon_dict
 import dict
 from encoder import Encoder
 from decoder import Decoder
 
 VALID_COMMAND_REGEX = re.compile(r"(MOV|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
+VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -23,6 +24,7 @@ def split_and_filter(line):
         
 def check_assembly_line(self, line):
     flag_N = flag_Z = flag_C = flag_V = "0"
+    flag_T = None
     parts = split_and_filter(line)
     # Biểu thức chính quy để kiểm tra định dạng dòng lệnh
     # ^         : bắt đầu dòng
@@ -34,9 +36,9 @@ def check_assembly_line(self, line):
     # $         : kết thúc dòng
     # Đảm bảo có ít nhất ba phần (lệnh và ít nhất hai đối số)
     if parts == None:
-         return None, None, flag_N, flag_Z, flag_C, flag_V
+         return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     if len(parts) < 3:
-        return None, None, flag_N, flag_Z, flag_C, flag_V
+        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
 
     instruction = parts[0]
     reg = parts[1]
@@ -48,12 +50,13 @@ def check_assembly_line(self, line):
     
     if regex_register.match(reg):
         match_instruction = re.search(VALID_COMMAND_REGEX, instruction)
+        match_instruction_test = re.search(VALID_COMMAND_REGEX_TEST, instruction)
         if match_instruction:
             instruction_clean = match_instruction.group(0)
             instruction = re.sub(match_instruction.group(0), "", instruction)
             match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
             if match_condition:
-                return None, None, flag_N, flag_Z, flag_C, flag_V
+                return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
             else:
                 match_flag = re.search(FLAG_REGEX, instruction)
                 if match_flag:
@@ -78,12 +81,12 @@ def check_assembly_line(self, line):
                                         temporary.append(binary_str[0])
                                         break
                                     else:
-                                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                                        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                                 binary_str = Decoder(binary_str)
                                 binary_str = Encoder(binary_str)
                                 temporary.append(binary_str)
                             else:
-                                return None, None, flag_N, flag_Z, flag_C, flag_V
+                                return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                         if SHIFT_REGEX.match(instruction_clean):
                             arguments, flag_C = Check_Command_With_Flag(temporary, instruction_clean)
                         else:
@@ -93,7 +96,7 @@ def check_assembly_line(self, line):
                         flag_N = result[0]
                         if Decoder(result) == 0: flag_Z = '1'
                     else:
-                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                 else:
                     if not instruction:
                         temporary = []
@@ -115,21 +118,71 @@ def check_assembly_line(self, line):
                                         temporary.append(binary_str[0])
                                         break
                                     else:
-                                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                                        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                                 binary_str = Decoder(binary_str)
                                 binary_str = Encoder(binary_str)
                                 temporary.append(binary_str)
                             else:
-                                return None, None, flag_N, flag_Z, flag_C, flag_V
+                                return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                         arguments = Check_Command(temporary, instruction_clean)
                     else:
-                        return None, None, flag_N, flag_Z, flag_C, flag_V
+                        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                         
-                return reg, arguments, flag_N, flag_Z, flag_C, flag_V
+                return reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T
+        elif match_instruction_test:
+            line_edit = line_edit_dict.get(reg)
+            binary_str_1 = line_edit.text()
+            instruction_clean = match_instruction_test.group(0)
+            instruction = re.sub(match_instruction_test.group(0), "", instruction)
+            match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+            if match_condition:
+                return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
+            else:
+                if not instruction:
+                    temporary = []
+                    for i in range(len(mem)):
+                        item = mem[i]
+                        if regex_const.match(item):
+                            clean_num = item.lstrip('#')
+                            num = int(clean_num)
+                            num_string = Encoder(num)
+                            binary_str_2 = num_string
+                        elif regex_register.match(item):
+                            line_edit = line_edit_dict.get(item)
+                            binary_str_2 = line_edit.text()
+                            if i + 1 < len(mem) and i + 2 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
+                                if regex_const.match(mem[i + 2]):
+                                    clean_num = mem[i + 2].lstrip('#')
+                                    num = int(clean_num)
+                                    binary_str_2, flag_C = Check_Shift(binary_str_2, num, mem[i + 1])
+                                    binary_str_2 = binary_str_2[0]
+                                    break
+                                else:
+                                    return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
+                            binary_str_2 = Decoder(binary_str_2)
+                            binary_str_2 = Encoder(binary_str_2)
+                        else:
+                            return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
+                    temporary.append(binary_str_1)
+                    temporary.append(binary_str_2)
+                    regex = re.compile(r"(CMP|CMN)", re.IGNORECASE)
+                    if regex.match(instruction_clean):
+                        arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean)
+                    else:
+                        arguments = Check_Command_With_Flag(temporary, instruction_clean)
+                    
+                    flag_T = 1    
+                    result = arguments[0]
+                    flag_N = result[0]
+                    if Decoder(result) == 0: flag_Z = '1'
+                else:
+                    return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
+                
+            return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
         else:
-            return None, None, flag_N, flag_Z, flag_C, flag_V
+            return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     else:
-        return None, None, flag_N, flag_Z, flag_C, flag_V
+        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     
 def Check_Shift(string, num, instruction):
     if (instruction.lower() == "lsr"):
@@ -182,6 +235,18 @@ def Check_Command_With_Flag(temporary, instruction):
         arguments, carry = ROR_C(temporary)
     elif (instruction.lower() == "rrx"):
         arguments, carry = RRX_C(temporary)
+    elif (instruction.lower() == "cmp"):
+        arguments, carry, overflow = dict.cmp_32(temporary)
+        return arguments, carry, overflow
+    elif (instruction.lower() == "cmn"):
+        arguments, carry, overflow = dict.cmn_32(temporary)
+        return arguments, carry, overflow
+    elif (instruction.lower() == "tst"):
+        arguments = AND(temporary)
+        return arguments
+    elif (instruction.lower() == "teq"):
+        arguments = EOR(temporary)
+        return arguments
     return arguments, carry
 
 def MOV(temporary):
