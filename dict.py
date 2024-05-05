@@ -26,6 +26,89 @@ conditon_dict = {
     "v": None
 }
 
+def check_condition(condition):
+    n_edit = conditon_dict.get("n")
+    n = n_edit.text()
+    z_edit = conditon_dict.get("z")
+    z = z_edit.text()
+    c_edit = conditon_dict.get("c")
+    c = c_edit.text()
+    v_edit = conditon_dict.get("v")
+    v = v_edit.text()
+    if (condition.lower() == "eq"):
+        if z == '1':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "ne"):
+        if z == '0':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "cs") or (condition.lower() == "hs"):
+        if c == '1':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "cc") or (condition.lower() == "lo"):
+        if c == '0':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "mi"):
+        if n == '1':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "pl"):
+        if n == '0':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "vs"):
+        if v == '1':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "vc"):
+        if v == '0':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "hi"):
+        if c == '1' and z == '0':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "ls"):
+        if c == '0' or z == '1':
+            return True
+        else: 
+            return False
+    if (condition.lower() == "ge"):
+        if n == v:
+            return True
+        else: 
+            return False
+    if (condition.lower() == "lt"):
+        if n != v:
+            return True
+        else: 
+            return False
+    if (condition.lower() == "gt"):
+        if z == '0' and n == v:
+            return True
+        else: 
+            return False
+    if (condition.lower() == "le"):
+        if z == '1' or n != v:
+            return True
+        else: 
+            return False
+    if (condition.lower() == "al"):
+        return True
+    
+    
 def condition_passed(cond, APSR):
     """
     Kiểm tra xem điều kiện có được thỏa mãn hay không dựa trên giá trị cờ APSR và điều kiện hiện tại.
@@ -218,4 +301,7 @@ def complement(binary_str):
     assert all(bit in '01' for bit in binary_str)
     complement_str = ''.join('1' if bit == '0' else '0' for bit in binary_str)
     return complement_str
+
+
+    
     

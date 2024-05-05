@@ -32,19 +32,25 @@ class Ui_MainWindow(object):
         self.tab_1 = QtWidgets.QWidget()
         self.tab_1.setObjectName("tab_1")
         self.SimulateButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.SimulateButton.setGeometry(QtCore.QRect(690, 320, 111, 51))
+        self.SimulateButton.setGeometry(QtCore.QRect(630, 320, 111, 51))
         self.SimulateButton.setObjectName("SimulateButton")
         self.RestarButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.RestarButton.setGeometry(QtCore.QRect(940, 320, 111, 51))
+        self.RestarButton.setGeometry(QtCore.QRect(990, 320, 111, 51))
         self.RestarButton.setObjectName("RestarButton")
+        self.StepButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.StepButton.setGeometry(QtCore.QRect(750, 320, 111, 51))
+        self.StepButton.setObjectName("StepButton")
+        self.BreakPointButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.BreakPointButton.setGeometry(QtCore.QRect(870, 320, 111, 51))
+        self.BreakPointButton.setObjectName("BreakPointButton")
         self.CodeEditText = QtWidgets.QTextEdit(parent=self.tab_1)
         self.CodeEditText.setGeometry(QtCore.QRect(620, 30, 491, 271))
         self.CodeEditText.setObjectName("CodeEditText")
         
         self.SimulateButton.clicked.connect(self.Check)
         self.RestarButton.clicked.connect(self.Restart)
+        self.StepButton.clicked.connect(self.check_next_line)
         
-
         self.formLayoutWidget = QtWidgets.QWidget(parent=self.tab_1)
         self.formLayoutWidget.setGeometry(QtCore.QRect(10, 30, 381, 511))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
@@ -263,6 +269,8 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.SimulateButton.setText(_translate("MainWindow", "Simulate"))
         self.RestarButton.setText(_translate("MainWindow", "Restart"))
+        self.StepButton.setText(_translate("MainWindow", "Step"))
+        self.BreakPointButton.setText(_translate("MainWindow", "BreakPoint"))
         self.r0_Label.setText(_translate("MainWindow", "r0"))
         self.r0_LineEdit.setText(_translate("MainWindow", "00000000000000000000000000000000"))
         self.r1_Label.setText(_translate("MainWindow", "r1"))
@@ -294,7 +302,7 @@ class Ui_MainWindow(object):
         self.lr_Label.setText(_translate("MainWindow", "lr"))
         self.lr_LineEdit.setText(_translate("MainWindow", "00000000000000000000000000000000"))
         self.pc_Label.setText(_translate("MainWindow", "pc"))
-        self.pc_LineEdit.setText(_translate("MainWindow", "00000000000000000000000000000000"))
+        self.pc_LineEdit.setText(_translate("MainWindow", hex(0)))
         self.n_Label.setText(_translate("MainWindow", "N"))
         self.n_LineEdit.setText(_translate("MainWindow", "0"))
         self.z_Label.setText(_translate("MainWindow", "Z"))
@@ -309,41 +317,96 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Memory"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
+    pc = 0x08000000
+    instruction_size = 4
+    
     def Check(self):
+        global pc
         text = self.CodeEditText.toPlainText()    
         lines = text.split("\n")
-        # Kiểm tra từng dòng và in ra trạng thái của chúng
         for index, line in enumerate(lines, start=1):
-            if line.strip():  # Nếu dòng không phải là rỗng
+            if line.strip():
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = check_assembly_line(self, line)
-                if(arguments != None):
-                    line_edit = line_edit_dict.get(reg)
-                    line_edit.setText(arguments[0])
-                    
-                    n_edit = conditon_dict.get("n")
-                    n_edit.setText(flag_N)
-                    z_edit = conditon_dict.get("z")
-                    z_edit.setText(flag_Z)
-                    c_edit = conditon_dict.get("c")
-                    c_edit.setText(flag_C)
-                    v_edit = conditon_dict.get("v")
-                    v_edit.setText(flag_V)
-                elif arguments == None and flag_T != None:
-                    n_edit = conditon_dict.get("n")
-                    n_edit.setText(flag_N)
-                    z_edit = conditon_dict.get("z")
-                    z_edit.setText(flag_Z)
-                    c_edit = conditon_dict.get("c")
-                    c_edit.setText(flag_C)
-                    v_edit = conditon_dict.get("v")
-                    v_edit.setText(flag_V)    
-                else:
-                    print("Lệnh ở dòng " + str(index) + " không hợp lệ")
+
+            if arguments:
+                line_edit = line_edit_dict.get(reg)
+                line_edit.setText(arguments[0])
+            elif arguments is None and flag_T:
+                pass
+            elif arguments is None:
+                print("Lệnh ở dòng " + str(index) + " không hợp lệ")
                 
+            n_edit = conditon_dict.get("n")
+            z_edit = conditon_dict.get("z")
+            c_edit = conditon_dict.get("c")
+            v_edit = conditon_dict.get("v")
+
+            n_edit.setText(flag_N)
+            z_edit.setText(flag_Z)
+            c_edit.setText(flag_C)
+            v_edit.setText(flag_V)
+            
+            pc_binary = hex(self.pc)
+            self.pc_LineEdit.setText(pc_binary)
+            self.pc += self.instruction_size
+                       
+    current_line_index = 0        
+    def check_next_line(self):
+        global current_line_index
+        text = self.CodeEditText.toPlainText()    
+        lines = text.split("\n")
+        if self.current_line_index < len(lines):
+            current_line = lines[self.current_line_index]
+            if current_line.strip():
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = check_assembly_line(self, current_line)
+
+            if arguments:
+                line_edit = line_edit_dict.get(reg)
+                line_edit.setText(arguments[0])
+            elif arguments is None and flag_T:
+                pass
+            elif arguments is None:
+                print("Lệnh ở dòng " + str(self.current_line_index) + " không hợp lệ")
+                
+            n_edit = conditon_dict.get("n")
+            z_edit = conditon_dict.get("z")
+            c_edit = conditon_dict.get("c")
+            v_edit = conditon_dict.get("v")
+
+            n_edit.setText(flag_N)
+            z_edit.setText(flag_Z)
+            c_edit.setText(flag_C)
+            v_edit.setText(flag_V)
+            
+            pc_binary = hex(self.pc)
+            self.pc_LineEdit.setText(pc_binary)
+            self.pc += self.instruction_size
+            
+            self.current_line_index += 1
+
     def Restart(self):
         self.CodeEditText.setText("")
-
-
+        self.r0_LineEdit.setText(f"{0:032b}")
+        self.r1_LineEdit.setText(f"{0:032b}")
+        self.r2_LineEdit.setText(f"{0:032b}")
+        self.r3_LineEdit.setText(f"{0:032b}")
+        self.r4_LineEdit.setText(f"{0:032b}")
+        self.r5_LineEdit.setText(f"{0:032b}")
+        self.r6_LineEdit.setText(f"{0:032b}")
+        self.r7_LineEdit.setText(f"{0:032b}")
+        self.r8_LineEdit.setText(f"{0:032b}")
+        self.r9_LineEdit.setText(f"{0:032b}")
+        self.r10_LineEdit.setText(f"{0:032b}")
+        self.r11_LineEdit.setText(f"{0:032b}")
+        self.r12_LineEdit.setText(f"{0:032b}")
+        self.sp_LineEdit.setText(f"{0:032b}")
+        self.lr_LineEdit.setText(f"{0:032b}")
+        self.pc_LineEdit.setText(hex(0))
+        self.n_LineEdit.setText("0")
+        self.z_LineEdit.setText("0")
+        self.c_LineEdit.setText("0")
+        self.v_LineEdit.setText("0")
+        
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

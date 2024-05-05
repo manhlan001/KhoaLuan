@@ -164,86 +164,16 @@ def rrx_c(x, carry_in, n):
 def rrx(x, carry_in, n):
     result, _ = rrx_c(x, carry_in, n)
     return result
-
-import re
-
-# Danh sách các chuỗi cần kiểm tra
-mem = ["r1"]
-
-# Biểu thức chính quy để tìm mẫu 'r' theo sau bởi một hoặc nhiều chữ số
-regex = re.compile(r"r\d+")
-
-# Tìm tất cả các mẫu 'r+1 số' trong danh sách
-matches = [re.findall(regex, m) for m in mem]
-
-# Làm phẳng danh sách các chuỗi khớp
-flattened_matches = [item for sublist in matches for item in sublist]
-
-# Tách chữ 'r' khỏi đầu của mỗi chuỗi
-clean_num = [item.lstrip('r') for item in flattened_matches]
-num = int(clean_num[0])
-num_string = Encoder(num)
-print(num_string)
-
-# In ra các chuỗi đã tách 'r'
-print("Các chuỗi dạng 'r+1 số' đã tách 'r':", num_string)
-
-# Kiểm tra xem có ít nhất một mẫu 'r+1 số' trong danh sách
-has_match = any(re.search(regex, m) for m in mem)
-
-if has_match:
-    print("Có chuỗi dạng 'r+1 số' trong danh sách")
-else:
-    print("Không có chuỗi dạng 'r+1 số' trong danh sách")
     
+import pdb
 
-# Biểu thức chính quy để tìm các mẫu 'r+số' hoặc '#+số'
-regex_r = re.compile(r"^r\d+$")  # Bắt đầu với 'r' và theo sau là một hoặc nhiều chữ số
-regex_hash = re.compile(r"^#\d+$")  # Bắt đầu với '#' và theo sau là một hoặc nhiều chữ số
-
-# Danh sách các phần tử cần kiểm tra
-items = ["r1", "#2", "r10", "a5", "#25", "xyz"]
-
-# Duyệt qua từng phần tử và kiểm tra
-results = {"r+số": [], "#+số": [], "không khớp": []}
-
-for item in items:
-    if regex_r.match(item):
-        results["r+số"].append(item)
-    elif regex_hash.match(item):
-        results["#+số"].append(item)
-    else:
-        results["không khớp"].append(item)
-
-# In ra các kết quả
-print("Các phần tử khớp dạng 'r+số':", results["r+số"])
-print("Các phần tử khớp dạng '#+số':", results["#+số"])
-print("Các phần tử không khớp:", results["không khớp"])
-
-t = "0"
-print(t)
-
-import re
-
-# Dãy ban đầu
-sequence = "lsrs"
-
-# Biểu thức chính quy để tìm chuỗi "lsr"
-pattern = re.compile(r"lsr")
-
-# Kiểm tra xem chuỗi "lsr" có xuất hiện trong dãy không
-match = re.search(pattern, sequence)
-
-if match:
-    print("Chuỗi 'lsr' được tìm thấy trong dãy.")
-    
-    # Xóa chuỗi "lsr" từ đầu dãy bằng lstrip()
-    sequence = sequence.lstrip("lsr")
-
-    print("Dãy sau khi xóa chuỗi 'lsr':", sequence)
-else:
-    print("Chuỗi 'lsr' không được tìm thấy trong dãy.")
-
+# Một hàm đơn giản với breakpoint
+def simple_function():
+    x = 10
+    y = 20
+    result = x + y
+    pdb.set_trace()  # Đặt breakpoint tại đây
+    return result
 
 
 
