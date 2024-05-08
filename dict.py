@@ -26,6 +26,66 @@ conditon_dict = {
     "v": None
 }
 
+DataProcessing_opcode_memory_dict = {
+    "and": '0000',
+    "eor": '0001',
+    "sub": '0010',
+    "rsb": '0011',
+    "add": '0100',
+    "adc": '0101',
+    "sbc": '0110',
+    "rsc": '0111',
+    "tst": '1000',
+    "teq": '1001',
+    "cmp": '1010',
+    "cmn": '1011',
+    "orr": '1100',
+    "mov": '1101',
+    "bic": '1110',
+    "mvn": '1111'
+}
+
+register_memory_dict = {
+    "r0": '0000',
+    "r1": '0001',
+    "r2": '0010',
+    "r3": '0011',
+    "r4": '0100',
+    "r5": '0101',
+    "r6": '0110',
+    "r7": '0111',
+    "r8": '1000',
+    "r9": '1001',
+    "r10": '1010',
+    "r11": '1011',
+    "r12": '1100'
+}
+
+condition_memory_dict = {
+    "eq": '0000',
+    "ne": '0001',
+    "cs" or "hs": '0010',
+    "cc" or "lo": '0011',
+    "mi": '0100',
+    "pl": '0101',
+    "vs": '0110',
+    "vc": '0111',
+    "hi": '1000',
+    "ls": '1001',
+    "ge": '1010',
+    "lt": '1011',
+    "gt": '1100',
+    "le": '1101',
+    "al": '1110',
+}
+
+shift_memory_dict = {
+    "lsl": '00',
+    "lsr": '01',
+    "asr": '10',
+    "ror": '11'
+}
+
 def check_condition(condition):
     n_edit = conditon_dict.get("n")
     n = n_edit.text()
@@ -107,32 +167,8 @@ def check_condition(condition):
             return False
     if (condition.lower() == "al"):
         return True
-    
-    
-def condition_passed(cond, APSR):
-    """
-    Kiểm tra xem điều kiện có được thỏa mãn hay không dựa trên giá trị cờ APSR và điều kiện hiện tại.
-    """
-    # Xác định kết quả dựa trên ba bit cao của 'cond'
-    result = False
-    cond_key = cond[:3]  # Lấy ba bit đầu tiên
-    condition_map = {
-        '000': APSR['Z'] == 1,  # EQ
-        '001': APSR['C'] == 1,  # CS
-        '002': APSR['N'] == 1,  # MI
-        '003': APSR['V'] == 1,  # VS
-        '100': APSR['C'] == 1 and APSR['Z'] == 0,  # HI
-        '101': APSR['N'] == APSR['V'],  # GE
-        '102': APSR['N'] == APSR['V'] and APSR['Z'] == 0,  # GT
-        '111': True  # AL (Always)
-    }
-    if cond_key in condition_map:
-        result = condition_map[cond_key]
-    # Nếu cần phải đảo ngược điều kiện
-    if cond[-1] == '1' and cond != '1111':
-        result = not result
-
-    return result
+    if (condition.lower() == ""):
+        return True
 
 def l_shift_32_c(a, shift_val):
     result = []
@@ -301,6 +337,56 @@ def complement(binary_str):
     assert all(bit in '01' for bit in binary_str)
     complement_str = ''.join('1' if bit == '0' else '0' for bit in binary_str)
     return complement_str
+
+def find_bit_positions(binary_str):
+    return [i for i, bit in enumerate(binary_str) if bit == '1']
+
+def determine_rotation_for_single_bit(position):
+    return ((31 - position[0]) // 2) * 2
+
+def determine_rotation_for_multiple_bits(positions):
+    first_position = positions[0]
+    last_position = positions[-1]
+    if last_position - first_position > 8:
+        return None
+    return  ((31 - last_position) // 2) * 2
+
+def process_binary(num):
+    if num < 0:
+        num = abs(num) - 1
+    binary_str = Encoder(num)
+    if len(binary_str) != 32:
+        return None
+    
+    positions = find_bit_positions(binary_str)
+    num_ones = len(positions)
+    
+    if int(binary_str, 2) > 255 and (31 in positions or 30 in positions):
+        return None
+    
+    if num_ones == 1:
+        rotation = determine_rotation_for_single_bit(positions)
+    elif num_ones > 1:
+        rotation = determine_rotation_for_multiple_bits(positions)
+        
+    if rotation == None:
+        return None
+
+    rotated_str = binary_str[-rotation:] + binary_str[:-rotation]
+    last_8_bits = rotated_str[-8:]
+    rotation_bits = format(15 - (rotation // 2), '04b')
+    
+    if int(binary_str, 2) < 256:
+        result = "0000" + last_8_bits
+        return result
+    
+    result = rotation_bits + last_8_bits
+    return result
+
+
+
+
+
 
 
     
