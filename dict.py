@@ -83,7 +83,8 @@ shift_memory_dict = {
     "lsl": '00',
     "lsr": '01',
     "asr": '10',
-    "ror": '11'
+    "ror": '11',
+    "rrx": '11'
 }
 
 def check_condition(condition):
@@ -364,7 +365,9 @@ def process_binary(num):
     if int(binary_str, 2) > 255 and (31 in positions or 30 in positions):
         return None
     
-    if num_ones == 1:
+    if num_ones == 0:
+        rotation = 0
+    elif num_ones == 1:
         rotation = determine_rotation_for_single_bit(positions)
     elif num_ones > 1:
         rotation = determine_rotation_for_multiple_bits(positions)
@@ -382,9 +385,6 @@ def process_binary(num):
     
     result = rotation_bits + last_8_bits
     return result
-
-
-
 
 
 

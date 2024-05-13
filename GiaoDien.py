@@ -9,8 +9,9 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 import re
 import sys
-import DataProcessing_Assembly
+import Assembly
 from dict import line_edit_dict, conditon_dict
+import Create_memory
 from encoder import Encoder
 from decoder import Decoder
 
@@ -317,39 +318,53 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Memory"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
-    pc = 0x08000000
+    pc = 0
     instruction_size = 4
-    memory = []
+    address = []
     
     def Check(self):
         self.message_box = QtWidgets.QMessageBox(self.tab_1)
         global pc
+        memory = []
         text = self.CodeEditText.toPlainText()
         lines = text.split("\n")
         for index, line in enumerate(lines, start=1):
-            if line.strip():
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T, memory_line = DataProcessing_Assembly.check_assembly_line(self, line)
-            elif not line.strip():
-                print("không có câu lệnh nào")
-                break
+            pc_binary = '0x' + format(self.pc, '08x')
+            self.pc_LineEdit.setText(pc_binary)
+            self.address.append(pc_binary)
+            self.pc += self.instruction_size
             
+            memory_line = Create_memory.check_memory(self, line)
             if memory_line:
-                self.memory.append(memory_line)
+                memory.append(memory_line)
                 
-            if not len(self.memory) > int(self.sizeMemory_LineEdit.text()):
-                text_content = "\t".join(str(item) for item in self.memory)
+            if not len(memory) > int(self.sizeMemory_LineEdit.text()):
+                text_content = "\t".join(str(item) for item in memory)
                 self.MemoryTextEdit.setPlainText(text_content)
             else:
                 print("Out of Memory")
                 break
+        
+        for index, line in enumerate(lines, start=1):
+            if line.strip():
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory)
+            elif not line.strip():
+                print("không có câu lệnh nào")
+                break
 
-            if arguments:
-                line_edit = line_edit_dict.get(reg)
+            if arguments and len(reg) == 1 and len(arguments) == 1:
+                line_edit = line_edit_dict.get(reg[0])
                 line_edit.setText(arguments[0])
+            elif arguments and len(reg) == 2 and len(arguments) == 2:
+                line_edit_1 = line_edit_dict.get(reg[0])
+                line_edit_1.setText(arguments[0])
+                line_edit_2 = line_edit_dict.get(reg[1])
+                line_edit_2.setText(arguments[1])
             elif arguments is None and flag_T:
                 pass
             elif arguments is None:
                 print("Lệnh ở dòng " + str(index) + " không hợp lệ")
+                break
                 
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
@@ -360,58 +375,70 @@ class Ui_MainWindow(object):
             z_edit.setText(flag_Z)
             c_edit.setText(flag_C)
             v_edit.setText(flag_V)
-            
-            pc_binary = hex(self.pc)
-            self.pc_LineEdit.setText(pc_binary)
-            self.pc += self.instruction_size
                        
-    current_line_index = 0        
+    current_line_index = 0
+    memory_current_line = []
     def check_next_line(self):
         global current_line_index
         text = self.CodeEditText.toPlainText()    
         lines = text.split("\n")
+        if self.current_line_index == 0:
+            address_index = 0
+            for index, line in enumerate(lines, start=1):
+                pc_binary = '0x' + format(address_index, '08x')
+                self.address.append(pc_binary)
+                address_index += self.instruction_size
+                
+                memory_line = Create_memory.check_memory(self, line)
+                if memory_line:
+                    self.memory_current_line.append(memory_line)
+                    
+                if not len(self.memory_current_line) > int(self.sizeMemory_LineEdit.text()):
+                    text_content = "\t".join(str(item) for item in self.memory_current_line)
+                    self.MemoryTextEdit.setPlainText(text_content)
+                else:
+                    print("Out of Memory")
+                    break
         if self.current_line_index < len(lines):
             current_line = lines[self.current_line_index]
             if current_line.strip():
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T, memory_line = DataProcessing_Assembly.check_assembly_line(self, current_line)
-                if arguments:
-                    line_edit = line_edit_dict.get(reg)
-                    line_edit.setText(arguments[0])
-                elif arguments is None and flag_T:
-                    pass
-                elif arguments is None:
-                    print("Lệnh ở dòng " + str(self.current_line_index) + " không hợp lệ")
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line)
+            elif not line.strip():
+                print("không còn câu lệnh nào")
+                pass
+                
+            if arguments and len(reg) == 1 and len(arguments) == 1:
+                line_edit = line_edit_dict.get(reg[0])
+                line_edit.setText(arguments[0])
+            elif arguments and len(reg) == 2 and len(arguments) == 2:
+                line_edit_1 = line_edit_dict.get(reg[0])
+                line_edit_1.setText(arguments[0])
+                line_edit_2 = line_edit_dict.get(reg[1])
+                line_edit_2.setText(arguments[1])
+            elif arguments is None and flag_T:
+                pass
+            elif arguments is None:
+                print("Lệnh ở dòng " + str(self.current_line_index) + " không hợp lệ")
                     
-                if memory_line:
-                    self.memory.append(memory_line)
-                    
-                if not len(self.memory) > int(self.sizeMemory_LineEdit.text()):
-                    text_content = "\t".join(str(item) for item in self.memory)
-                    self.MemoryTextEdit.setPlainText(text_content)
-                else:
-                    flag_N = flag_Z = flag_C = flag_V = '0'
-                    print("Out of Memory")
-                    
-                n_edit = conditon_dict.get("n")
-                z_edit = conditon_dict.get("z")
-                c_edit = conditon_dict.get("c")
-                v_edit = conditon_dict.get("v")
+            n_edit = conditon_dict.get("n")
+            z_edit = conditon_dict.get("z")
+            c_edit = conditon_dict.get("c")
+            v_edit = conditon_dict.get("v")
 
-                n_edit.setText(flag_N)
-                z_edit.setText(flag_Z)
-                c_edit.setText(flag_C)
-                v_edit.setText(flag_V)
-                
-                pc_binary = hex(self.pc)
-                self.pc_LineEdit.setText(pc_binary)
-                self.pc += self.instruction_size
-                
-                self.current_line_index += 1
-                
-            else:
-                print("không có câu lệnh nào")
+            n_edit.setText(flag_N)
+            z_edit.setText(flag_Z)
+            c_edit.setText(flag_C)
+            v_edit.setText(flag_V)
+            
+            pc_binary = '0x' + format(self.pc, '08x')
+            self.pc_LineEdit.setText(pc_binary)
+            self.pc += self.instruction_size
+            
+            self.current_line_index += 1
 
     def Restart(self):
+        self.address = []
+        self.memory_current_line = []
         self.CodeEditText.setText("")
         self.r0_LineEdit.setText(f"{0:032b}")
         self.r1_LineEdit.setText(f"{0:032b}")
@@ -428,8 +455,8 @@ class Ui_MainWindow(object):
         self.r12_LineEdit.setText(f"{0:032b}")
         self.sp_LineEdit.setText(f"{0:032b}")
         self.lr_LineEdit.setText(f"{0:032b}")
-        self.pc = 0x08000000
-        self.pc_LineEdit.setText(hex(0))
+        self.pc = 0
+        self.pc_LineEdit.setText('0x' + format(0, '08x'))
         self.current_line_index = 0
         self.n_LineEdit.setText("0")
         self.z_LineEdit.setText("0")
