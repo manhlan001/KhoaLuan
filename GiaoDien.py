@@ -10,7 +10,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 import re
 import sys
 import Assembly
-from dict import line_edit_dict, conditon_dict
+from dict import plain_edit_dict, line_edit_dict, conditon_dict
 import Create_memory
 from encoder import Encoder
 from decoder import Decoder
@@ -260,6 +260,8 @@ class Ui_MainWindow(object):
         self.label.setFont(font)
         self.label.setObjectName("label")
         MainWindow.setCentralWidget(self.centralwidget)
+        
+        plain_edit_dict["memory"] = self.MemoryTextEdit
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
@@ -303,7 +305,7 @@ class Ui_MainWindow(object):
         self.lr_Label.setText(_translate("MainWindow", "lr"))
         self.lr_LineEdit.setText(_translate("MainWindow", "00000000000000000000000000000000"))
         self.pc_Label.setText(_translate("MainWindow", "pc"))
-        self.pc_LineEdit.setText(_translate("MainWindow", hex(0)))
+        self.pc_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
         self.n_Label.setText(_translate("MainWindow", "N"))
         self.n_LineEdit.setText(_translate("MainWindow", "0"))
         self.z_Label.setText(_translate("MainWindow", "Z"))

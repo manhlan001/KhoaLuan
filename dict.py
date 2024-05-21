@@ -1,5 +1,9 @@
 from decoder import Decoder
 from encoder import Encoder
+plain_edit_dict = {
+    "memory": None
+}
+
 line_edit_dict = {
     "r0": None,
     "r1": None,
@@ -281,7 +285,7 @@ def xor_32(str1, str2):
     result.append(result_str)
     return result
 
-def cmp_32(temporary):
+def sub_32(temporary):
     result = []
     assert len(temporary) == 2
     str1 = temporary[0]
@@ -307,7 +311,7 @@ def detect_overflow_sub(a, b, res):
         return '1'
     return '0'
 
-def cmn_32(temporary):
+def add_32(temporary):
     result = []
     assert len(temporary) == 2
     str1 = temporary[0]
@@ -332,6 +336,102 @@ def detect_overflow_add(a, b, res):
     if a_sign == b_sign and a_sign != res_sign:
         return '1'
     return '0'
+
+def mul_32(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)  
+    num2 = int(str2, 2)  
+    result_int = num1 * num2
+    result_str = f"{result_int & ((1 << 32) - 1):032b}"
+    result_str = Decoder(result_str)
+    result_str = Encoder(result_str)
+    result.append(result_str)
+    return result
+
+def mul_64_unsigned(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)
+    num2 = int(str2, 2)
+    result_int = num1 * num2
+    lower_32 = result_int & ((1 << 32) - 1)
+    upper_32 = (result_int >> 32) & ((1 << 32) - 1)
+    lower_32_str = f"{lower_32:032b}"
+    upper_32_str = f"{upper_32:032b}"
+    result.append(lower_32_str)
+    result.append(upper_32_str)
+    return result
+
+def mul_64_signed(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)
+    if num1 >= 2**31:
+        num1 -= 2**32
+    num2 = int(str2, 2)
+    if num2 >= 2**31:
+        num2 -= 2**32
+    result_int = num1 * num2
+    lower_32 = result_int & ((1 << 32) - 1)
+    upper_32 = (result_int >> 32) & ((1 << 32) - 1)
+    if lower_32 >= 2**31:
+        lower_32 -= 2**32
+    if upper_32 >= 2**31:
+        upper_32 -= 2**32
+    lower_32_str = f"{lower_32 & ((1 << 32) - 1):032b}"
+    upper_32_str = f"{upper_32 & ((1 << 32) - 1):032b}"
+    result.append(lower_32_str)
+    result.append(upper_32_str)
+    return result
+
+def divide_32_unsigned(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)
+    num2 = int(str2, 2)
+    assert num2 != 0
+    result_int = num1 // num2
+    result_str = f"{result_int:032b}"
+    result.append(result_str)
+    return result
+
+def divide_32_signed(temporary):
+    result = []
+    assert len(temporary) == 2
+    str1 = temporary[0]
+    str2 = temporary[1]
+    assert isinstance(str1, str) and isinstance(str2, str)
+    assert len(str1) == 32 and len(str2) == 32
+    num1 = int(str1, 2)
+    if num1 >= 2**31:
+        num1 -= 2**32
+    num2 = int(str2, 2)
+    if num2 >= 2**31:
+        num2 -= 2**32
+    assert num2 != 0
+    result_int = num1 // num2
+    if result_int < 0:
+        result_int += 2**32
+    result_str = f"{result_int & ((1 << 32) - 1):032b}"
+    result.append(result_str)
+    return result
 
 def complement(binary_str):
     assert isinstance(binary_str, str)
@@ -380,14 +480,11 @@ def process_binary(num):
     rotation_bits = format(15 - (rotation // 2), '04b')
     
     if int(binary_str, 2) < 256:
-        result = "0000" + last_8_bits
+        result = "0000" + binary_str[-8:]
         return result
     
     result = rotation_bits + last_8_bits
     return result
-
-
-
 
     
     
