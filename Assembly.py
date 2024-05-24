@@ -15,6 +15,7 @@ VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
+COLON_REGEX = re.compile(r"\:")
 
 def split_and_filter(line):
     parts = re.split(r',', line)
@@ -53,7 +54,7 @@ def check_assembly_line(self, line, address, memory):
     mem = parts[2:]
     arguments = []
     
-    regex_register = re.compile(r"r\d+$")
+    regex_register = re.compile(r"r\d+$|lr")
     regex_const = re.compile(r"#-?\d+$")
     
     if not regex_register.match(reg[0]):

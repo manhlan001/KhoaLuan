@@ -49,7 +49,7 @@ def check_memory(self, line):
     num_memory = ""
     reg_memory = []
     
-    regex_register = re.compile(r"r\d+$")
+    regex_register = re.compile(r"r\d+$", re.IGNORECASE)
     regex_const = re.compile(r"#-?\d+$")
     
     if not regex_register.match(reg):

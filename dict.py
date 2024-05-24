@@ -1,5 +1,6 @@
 from decoder import Decoder
 from encoder import Encoder
+import string
 plain_edit_dict = {
     "memory": None
 }
@@ -62,7 +63,10 @@ register_memory_dict = {
     "r9": '1001',
     "r10": '1010',
     "r11": '1011',
-    "r12": '1100'
+    "r12": '1100',
+    "sp": '1101',
+    "lr": '1110',
+    "pc": '1111'
 }
 
 condition_memory_dict = {
@@ -90,6 +94,45 @@ shift_memory_dict = {
     "ror": '11',
     "rrx": '11'
 }
+
+def is_special_or_digit(word):
+    # Kiểm tra xem từ có rỗng không
+    if not word:
+        return False
+
+    # Lấy ký tự đầu tiên của từ
+    first_char = word[0]
+
+    # Kiểm tra nếu ký tự đầu tiên là số
+    if first_char.isdigit():
+        return True
+
+    # Kiểm tra nếu ký tự đầu tiên là ký tự đặc biệt
+    special_characters = string.punctuation  # Lấy tất cả các ký tự đặc biệt chuẩn
+    if first_char in special_characters:
+        return True
+
+    # Nếu không phải số hoặc ký tự đặc biệt
+    return False
+
+def parse_labels(input_lines):
+    labels = {}
+    current_label = None
+    remaining_lines = []
+
+    for line in input_lines:
+        stripped_line = line.strip()
+        result = is_special_or_digit(stripped_line)
+        
+        if stripped_line.endswith(':') and not result:
+            current_label = stripped_line[:-1]
+            labels[current_label] = []
+        elif current_label is not None:
+            labels[current_label].append(stripped_line)
+            remaining_lines.append(stripped_line)
+        else:
+            remaining_lines.append(stripped_line)
+    return labels, remaining_lines
 
 def check_condition(condition):
     n_edit = conditon_dict.get("n")
