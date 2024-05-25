@@ -49,7 +49,7 @@ def check_memory(self, line):
     num_memory = ""
     reg_memory = []
     
-    regex_register = re.compile(r"r\d+$", re.IGNORECASE)
+    regex_register = re.compile(r"r\d+$")
     regex_const = re.compile(r"#-?\d+$")
     
     if not regex_register.match(reg):
@@ -135,16 +135,17 @@ def check_memory(self, line):
                         return memory
                     
                 Rd = dict.register_memory_dict.get(reg)    
-                Rn = "0000"    
+                Rn = "0000"
+                Rm = "0000"  
                 if len(reg_memory) == 1:
                     Rn = dict.register_memory_dict.get(reg_memory[0])
                 elif len(reg_memory) == 2:
                     Rn = dict.register_memory_dict.get(reg_memory[0])
-                    Rm = reg_memory[1]
+                    Rm = dict.register_memory_dict.get(reg_memory[1])
                 condition_memory = dict.condition_memory_dict.get(condition)
                 opcode_memory = dict.DataProcessing_opcode_memory_dict.get(instruction_clean)
                 if Immediate_Operand == "0":
-                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + dict.register_memory_dict.get(Rm)
+                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + Rm
                 elif Immediate_Operand == "1":
                     memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + num_memory
         else:
@@ -214,6 +215,7 @@ def check_memory(self, line):
         Immediate_Operand = "0"
         condition_memory = dict.condition_memory_dict.get(condition)
         shift = "00000000"
+        num_memory = "000000000000"
         instruction_clean = match_instruction_single_data_tranfer.group(0)
         instruction = re.sub(match_instruction_single_data_tranfer.group(0), "", instruction)
         match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
