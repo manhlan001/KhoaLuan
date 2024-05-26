@@ -24,7 +24,7 @@ def split_and_filter(line):
         final_parts.extend([sub_part for sub_part in sub_parts if sub_part.strip() != ''])
     return final_parts
         
-def check_memory(self, line):
+def check_memory(self, line, address, lines, data_labels):
     condition = "al"
     memory = ""
     
@@ -213,6 +213,7 @@ def check_memory(self, line):
     elif match_instruction_single_data_tranfer:
         P = U = B = W = L = "0"
         Immediate_Operand = "0"
+        Rn = "0000"
         condition_memory = dict.condition_memory_dict.get(condition)
         shift = "00000000"
         num_memory = "000000000000"
@@ -227,22 +228,33 @@ def check_memory(self, line):
         if len(mem) == 1:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
+            regex_equal = re.compile(r"\=")
             if bracket_1 and bracket_2:
                 mem[0] = mem[0].strip("[]")
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
+                    Rn = dict.register_memory_dict.get(reg_memory[0])
+            else:
+                mapping = {key: value for key, value in zip(lines, address)}
+                have_label = re.search(regex_equal, mem[0])
+                if have_label and data_labels:
+                    label = mem[0].strip('=')
+                    Rn = "1111"
+                    if label in data_labels:
+                        index = data_labels.index(label)
+                        hex_str = data_labels[index + 1]
+                        num_1 = int(hex_str, 16)
+                        num_2_str = mapping.get(line)
+                        num_2 = int(num_2_str, 16)
+                        num_memory = Encoder_12bit(num_1 - num_2)
                 else:
                     return memory
-
-            elif not bracket_1 or not bracket_2:
-                return memory
             
             if instruction_clean.lower() == "ldr":
                 L = "1"
             if instruction_clean.lower() == "str":
                 L = "0"
             Rd = dict.register_memory_dict.get(reg)
-            Rn = dict.register_memory_dict.get(reg_memory[0])
             Rm = "0000"
             P = U = "1"
             B = W = "0"

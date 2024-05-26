@@ -2,6 +2,7 @@ import re
 import sys
 from dict import plain_edit_dict, line_edit_dict, conditon_dict
 import dict
+import ctypes
 import GiaoDien
 from encoder import Encoder
 from decoder import Decoder
@@ -43,7 +44,7 @@ def check_branch(self, line, address, lines):
             if regex_register.match(parts[1]):
                 line_str = line_edit_dict.get(parts[1])
                 bit_str = line_str.text()
-                bit_int = int(bit_str, 16)
+                bit_int = ctypes.c_int32(int(bit_str, 16)).value
                 hex_string = '0x' + format(bit_int, '08x')
                 label = mapping.get(hex_string)
                 return label, flag_B
@@ -51,7 +52,7 @@ def check_branch(self, line, address, lines):
                 return None, flag_B
         if instruction.lower() == "bl":
             address_branch_link = mappping_address.get(line)
-            int_address_branch_link = int(address_branch_link, 16)
+            int_address_branch_link = ctypes.c_int32(int(address_branch_link, 16)).value
             int_address_branch_link = int_address_branch_link + 4
             str_address_branch_link = '0x' + format(int_address_branch_link, '08x')
             lr = line_edit_dict.get("lr")
@@ -99,8 +100,8 @@ def get_memory_offset(current_line, current_label, lines, address, labels):
         target = mapping.get(labels[current_label][0])
     current = mapping.get(current_line)
     if current != None and target != None:
-        current_int = int(current, 16)
-        target_int = int(target, 16)
+        current_int = ctypes.c_int32(int(current, 16)).value
+        target_int = ctypes.c_int32(int(target, 16)).value
         result = int((target_int - current_int - 8) / 4)
         result_str = Encoder_24bit(result)
     return result_str

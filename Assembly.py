@@ -3,6 +3,7 @@ import sys
 from dict import plain_edit_dict, line_edit_dict, conditon_dict
 import dict
 import GiaoDien
+import ctypes
 from encoder import Encoder
 from decoder import Decoder
 
@@ -27,7 +28,7 @@ def split_and_filter(line):
         final_parts.extend([sub_part for sub_part in sub_parts if sub_part.strip() != ''])
     return final_parts
         
-def check_assembly_line(self, line, address, memory):
+def check_assembly_line(self, line, address, memory, data_labels):
     reg = []
     c = True
     flag_N = flag_Z = flag_C = flag_V = "0"
@@ -99,7 +100,7 @@ def check_assembly_line(self, line, address, memory):
                 elif regex_register.match(item):
                     line_edit = line_edit_dict.get(item)
                     binary_str = line_edit.text()
-                    hex_int = int(binary_str, 16)
+                    hex_int = ctypes.c_int32(int(binary_str, 16)).value
                     binary_str = Encoder(hex_int)
                     if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and VALID_COMMAND_REGEX_BIT_OP.match(instruction_clean):
                         t = []
@@ -124,7 +125,7 @@ def check_assembly_line(self, line, address, memory):
                             elif regex_register.match(mem[i + 2]):
                                 num_edit = line_edit_dict.get(mem[i + 2])
                                 num_str = num_edit.text()
-                                num = int(num_str, 16)
+                                num = ctypes.c_int32(int(num_str, 16)).value
                                 num_str = Encoder(num)
                                 t.append(binary_str)
                                 t.append(num_str)
@@ -192,7 +193,7 @@ def check_assembly_line(self, line, address, memory):
                 elif regex_register.match(item):
                     line_edit = line_edit_dict.get(item)
                     binary_str_2 = line_edit.text()
-                    hex_int_2 = int(binary_str_2, 16)
+                    hex_int_2 = ctypes.c_int32(int(binary_str_2, 16)).value
                     binary_str_2 = Encoder(hex_int_2)
                     if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
                         t = []
@@ -216,7 +217,7 @@ def check_assembly_line(self, line, address, memory):
                                 break
                             elif regex_register.match(mem[i + 2]):
                                 num_edit = line_edit_dict.get(mem[i + 2])
-                                num = int(num_str, 16)
+                                num = ctypes.c_int32(int(num_str, 16)).value
                                 num_str = Encoder(num)
                                 t.append(binary_str_2)
                                 t.append(num_str)
@@ -269,6 +270,7 @@ def check_assembly_line(self, line, address, memory):
         if len(mem) == 1:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
+            regex_equal = re.compile(r"\=")
             if bracket_1 and bracket_2:
                 mem[0] = mem[0].strip("[]")
                 if regex_register.match(mem[0]):
@@ -276,9 +278,16 @@ def check_assembly_line(self, line, address, memory):
                     hex_str = line_edit.text()
                 else:
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
-            elif not bracket_1 or not bracket_2:
-                return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
-            
+            else:
+                have_label = re.search(regex_equal, mem[0])
+                if have_label and data_labels:
+                    label = mem[0].strip('=')
+                    if label in data_labels:
+                        index = data_labels.index(label)
+                        hex_str = data_labels[index + 1]
+                else:
+                    return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
+               
             if instruction_clean.lower() == "ldr":
                 result = LDR(hex_str, address, memory)
                 arguments.append(result)
@@ -296,7 +305,7 @@ def check_assembly_line(self, line, address, memory):
                 if regex_register.match(mem[0]):
                     line_edit = line_edit_dict.get(mem[0])
                     hex_str = line_edit.text()
-                    num_1 = int(hex_str, 16)
+                    num_1 = ctypes.c_int32(int(hex_str, 16)).value
                     temporary.append(num_1)
                     if regex_const.match(mem[1]):
                         clean_num = mem[1].lstrip('#')
@@ -305,8 +314,10 @@ def check_assembly_line(self, line, address, memory):
                     elif regex_register.match(mem[1]):
                         line_edit = line_edit_dict.get(mem[1])
                         hex_str_reg = line_edit.text()
-                        num_2 = int(hex_str_reg, 16)
+                        num_2 = ctypes.c_int32(int(hex_str_reg, 16)).value
                         temporary.append(num_2)
+                    else:
+                        return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                 elif not regex_register.match(mem[0]):
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                 num_result = num_1 + num_2
@@ -317,7 +328,7 @@ def check_assembly_line(self, line, address, memory):
                 if regex_register.match(mem[0]):
                     line_edit = line_edit_dict.get(mem[0])
                     hex_str = line_edit.text()
-                    num_1 = int(hex_str, 16)
+                    num_1 = ctypes.c_int32(int(hex_str, 16)).value
                     temporary.append(num_1)
                 elif not regex_register.match(mem[0]):
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -336,7 +347,7 @@ def check_assembly_line(self, line, address, memory):
                         elif regex_register.match(mem[1]):
                             line_edit = line_edit_dict.get(mem[1])
                             hex_str_reg = line_edit.text()
-                            num_2 = int(hex_str_reg, 16)
+                            num_2 = ctypes.c_int32(int(hex_str_reg, 16)).value
                             temporary.append(num_2)
                         else:
                             return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -351,10 +362,10 @@ def check_assembly_line(self, line, address, memory):
                         elif regex_register.match(mem[1]):
                             line_edit = line_edit_dict.get(mem[1])
                             hex_str_reg = line_edit.text()
-                            num_2 = int(hex_str_reg, 16)
+                            num_2 = ctypes.c_int32(int(hex_str_reg, 16)).value
                             temporary.append(num_2)
                         else:
-                            return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T 
+                            return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                     num_result = num_1 + num_2
                     hex_str = '0x' + format(num_result, '08x')
                 elif not bracket_mem:
@@ -390,14 +401,14 @@ def check_assembly_line(self, line, address, memory):
                 if regex_register.match(mem[0]):
                     line_edit = line_edit_dict.get(mem[0])
                     hex_str = line_edit.text()
-                    num_1 = int(hex_str, 16)
+                    num_1 = ctypes.c_int32(int(hex_str, 16)).value
                     temporary.append(num_1)
                     for i in range(1, len(mem)):
                         item = mem[i]
                         if regex_register.match(item):
                             line_edit = line_edit_dict.get(item)
                             hex_str_in = line_edit.text()
-                            hex_int_in = int(hex_str_in, 16)
+                            hex_int_in = ctypes.c_int32(int(hex_str_in, 16)).value
                             hex_str_in = Encoder(hex_int_in)
                             if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
                                 temp = []
@@ -420,7 +431,7 @@ def check_assembly_line(self, line, address, memory):
                                     elif regex_register.match(mem[i + 2]):
                                         num_edit = line_edit_dict.get(mem[i + 2])
                                         num_str = num_edit.text()
-                                        num = int(num_str, 16)
+                                        num = ctypes.c_int32(int(num_str, 16)).value
                                         num_str = Encoder(num)
                                         temp.append(hex_str_in)
                                         temp.append(num_str)
@@ -443,7 +454,7 @@ def check_assembly_line(self, line, address, memory):
                 if regex_register.match(mem[0]):
                     line_edit = line_edit_dict.get(mem[0])
                     hex_str = line_edit.text()
-                    num_1 = int(hex_str, 16)
+                    num_1 = ctypes.c_int32(int(hex_str, 16)).value
                     temporary.append(num_1)
                 elif not regex_register.match(mem[0]):
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -476,7 +487,7 @@ def check_assembly_line(self, line, address, memory):
                     if regex_register.match(item):
                         line_edit = line_edit_dict.get(item)
                         hex_str_in = line_edit.text()
-                        hex_int_in = int(hex_str_in, 16)
+                        hex_int_in = ctypes.c_int32(int(hex_str_in, 16)).value
                         hex_str_in = Encoder(hex_int_in)
                         if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
                             temp = []
@@ -577,7 +588,7 @@ def check_assembly_line(self, line, address, memory):
                 if regex_register.match(item):
                     line_edit = line_edit_dict.get(item)
                     binary_str = line_edit.text()
-                    num = int(binary_str, 16)
+                    num = ctypes.c_int32(int(binary_str, 16)).value
                     binary_str = Encoder(num)
                     temporary.append(binary_str)
                 else:

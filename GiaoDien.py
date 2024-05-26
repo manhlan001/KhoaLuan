@@ -10,6 +10,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 import re
 import sys
 import Assembly
+import data
 from dict import plain_edit_dict, line_edit_dict, conditon_dict, parse_labels
 from Branch import check_branch, memory_branch
 import Create_memory
@@ -331,13 +332,18 @@ class Ui_MainWindow(object):
         memory = []
         text = self.CodeEditText.toPlainText()
         lines = text.split("\n")
+        lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
+        lines = [item for item in lines if item not in ["", None]]
         for index, line in enumerate(lines, start=1):
             pc_binary = '0x' + format(self.pc, '08x')
             self.address.append(pc_binary)
             self.pc += self.instruction_size
+        data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
+        if data_address:
+            self.address.extend(data_address)
         for index, line in enumerate(lines, start=1):
-            memory_line = Create_memory.check_memory(self, line)
+            memory_line = Create_memory.check_memory(self, line, self.address, lines, data_labels)
             if memory_line:
                 int_memory_line = Decoder(memory_line)
                 memory_line = '0x' + format(int_memory_line, '08x')
@@ -347,21 +353,19 @@ class Ui_MainWindow(object):
                 int_memory_line_branch = Decoder(memory_line_branch)
                 memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
                 memory.append(memory_line_branch)
-            if not len(memory) > int(self.sizeMemory_LineEdit.text()):
-                text_content = "\n".join(str(item) for item in memory)
-                self.MemoryTextEdit.setPlainText(text_content)
-            else:
-                print("Out of Memory")
-                break
+        if data_memory:
+            memory.extend(data_memory)
+        text_content = "\n".join(str(item) for item in memory)
+        self.MemoryTextEdit.setPlainText(text_content)
         mapping = {key: value for key, value in zip(self.address, lines)}
         i = 0
-        while i < len(self.address):
+        while i < len(lines):
             pc_binary = self.address[i]
             self.pc_LineEdit.setText(pc_binary)
             line = mapping.get(self.address[i])
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels)
                 i += 1
             elif not line.strip():
                 print("không có câu lệnh nào")
@@ -411,36 +415,47 @@ class Ui_MainWindow(object):
                        
     current_line_index = 0
     memory_current_line = []
+    data_labels = []
     def check_next_line(self):
         global current_line_index
         text = self.CodeEditText.toPlainText()    
         lines = text.split("\n")
+        lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
+        lines = [item for item in lines if item not in ["", None]]
         if self.current_line_index == 0:
             address_index = 0
             for index, line in enumerate(lines, start=1):
                 pc_binary = '0x' + format(address_index, '08x')
                 self.address.append(pc_binary)
                 address_index += self.instruction_size
-                
-                memory_line = Create_memory.check_memory(self, line)
+            self.data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
+            if data_address:
+                self.address.extend(data_address)
+            for index, line in enumerate(lines, start=1):
+                memory_line = Create_memory.check_memory(self, line, self.address, lines, self.data_labels)
                 if memory_line:
+                    int_memory_line = Decoder(memory_line)
+                    memory_line = '0x' + format(int_memory_line, '08x')
                     self.memory_current_line.append(memory_line)
-                    
-                if not len(self.memory_current_line) > int(self.sizeMemory_LineEdit.text()):
-                    text_content = "\t".join(str(item) for item in self.memory_current_line)
-                    self.MemoryTextEdit.setPlainText(text_content)
-                else:
-                    print("Out of Memory")
-                    break
+                memory_line_branch = memory_branch(self, line, lines, self.address, labels)
+                if memory_line_branch:
+                    int_memory_line_branch = Decoder(memory_line_branch)
+                    memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
+                    self.memory_current_line.append(memory_line_branch)
+            if data_memory:
+                self.memory_current_line.extend(data_memory)        
+            text_content = "\n".join(str(item) for item in self.memory_current_line)
+            self.MemoryTextEdit.setPlainText(text_content)
         mapping = {key: value for key, value in zip(self.address, lines)}
         if self.current_line_index < len(lines):
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
             current_line = lines[self.current_line_index]
+            print(current_line)
             if current_line.strip():
                 label, flag_B = check_branch(self, current_line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels)
                 self.current_line_index += 1
             elif not line.strip():
                 print("không còn câu lệnh nào")
@@ -472,7 +487,7 @@ class Ui_MainWindow(object):
             elif flag_B:
                 pass
             elif arguments is None or flag_B == None:
-                print("Lệnh " + "[" + mapping.get(self.address[self.current_line_index]) + "]"+ " không hợp lệ")
+                print("Lệnh " + "[" + current_line + "]"+ " không hợp lệ")
                     
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
