@@ -21,11 +21,29 @@ COLON_REGEX = re.compile(r"\:")
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1128, 691)
+        MainWindow.resize(1053, 863)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.tabWidget = QtWidgets.QTabWidget(parent=self.centralwidget)
-        self.tabWidget.setGeometry(QtCore.QRect(0, 70, 1131, 621))
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.centralwidget)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.scrollArea = QtWidgets.QScrollArea(parent=self.centralwidget)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName("scrollArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 1033, 843))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+        self.gridLayout.setObjectName("gridLayout")
+        self.label = QtWidgets.QLabel(parent=self.scrollAreaWidgetContents)
+        font = QtGui.QFont()
+        font.setPointSize(24)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label.setFont(font)
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label.setObjectName("label")
+        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
+        self.tabWidget = QtWidgets.QTabWidget(parent=self.scrollAreaWidgetContents)
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(True)
@@ -35,19 +53,25 @@ class Ui_MainWindow(object):
         self.tab_1 = QtWidgets.QWidget()
         self.tab_1.setObjectName("tab_1")
         self.SimulateButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.SimulateButton.setGeometry(QtCore.QRect(630, 320, 111, 51))
+        self.SimulateButton.setGeometry(QtCore.QRect(10, 20, 111, 51))
         self.SimulateButton.setObjectName("SimulateButton")
         self.RestarButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.RestarButton.setGeometry(QtCore.QRect(990, 320, 111, 51))
+        self.RestarButton.setGeometry(QtCore.QRect(140, 20, 111, 51))
         self.RestarButton.setObjectName("RestarButton")
-        self.StepButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.StepButton.setGeometry(QtCore.QRect(750, 320, 111, 51))
-        self.StepButton.setObjectName("StepButton")
         self.BreakPointButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.BreakPointButton.setGeometry(QtCore.QRect(870, 320, 111, 51))
+        self.BreakPointButton.setGeometry(QtCore.QRect(10, 80, 111, 51))
         self.BreakPointButton.setObjectName("BreakPointButton")
+        self.StepButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.StepButton.setGeometry(QtCore.QRect(270, 20, 111, 51))
+        self.StepButton.setObjectName("StepButton")
+        self.ImportButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.ImportButton.setGeometry(QtCore.QRect(140, 80, 111, 51))
+        self.ImportButton.setObjectName("ImportButton")
+        self.ExportButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.ExportButton.setGeometry(QtCore.QRect(270, 80, 111, 51))
+        self.ExportButton.setObjectName("ExportButton")
         self.CodeEditText = QtWidgets.QTextEdit(parent=self.tab_1)
-        self.CodeEditText.setGeometry(QtCore.QRect(620, 30, 491, 271))
+        self.CodeEditText.setGeometry(QtCore.QRect(410, 10, 591, 721))
         self.CodeEditText.setObjectName("CodeEditText")
         
         self.SimulateButton.clicked.connect(self.Check)
@@ -55,7 +79,7 @@ class Ui_MainWindow(object):
         self.StepButton.clicked.connect(self.check_next_line)
         
         self.formLayoutWidget = QtWidgets.QWidget(parent=self.tab_1)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(10, 30, 381, 511))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(10, 180, 201, 511))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.Layout_registers = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.Layout_registers.setContentsMargins(10, 10, 10, 0)
@@ -63,10 +87,6 @@ class Ui_MainWindow(object):
         self.r0_Label = QtWidgets.QLabel(parent=self.formLayoutWidget)
         self.r0_Label.setObjectName("r0_Label")
         self.Layout_registers.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.r0_Label)
-        self.r0_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
-        self.r0_LineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.r0_LineEdit.setObjectName("r0_LineEdit")
-        self.Layout_registers.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.r0_LineEdit)
         self.r1_Label = QtWidgets.QLabel(parent=self.formLayoutWidget)
         self.r1_Label.setObjectName("r1_Label")
         self.Layout_registers.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.r1_Label)
@@ -172,6 +192,10 @@ class Ui_MainWindow(object):
         self.pc_LineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.pc_LineEdit.setObjectName("pc_LineEdit")
         self.Layout_registers.setWidget(15, QtWidgets.QFormLayout.ItemRole.FieldRole, self.pc_LineEdit)
+        self.r0_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
+        self.r0_LineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.r0_LineEdit.setObjectName("r0_LineEdit")
+        self.Layout_registers.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.r0_LineEdit)
         
         line_edit_dict["r0"] = self.r0_LineEdit
         line_edit_dict["r1"] = self.r1_LineEdit
@@ -191,7 +215,7 @@ class Ui_MainWindow(object):
         line_edit_dict["pc"] = self.pc_LineEdit
 
         self.formLayoutWidget_2 = QtWidgets.QWidget(parent=self.tab_1)
-        self.formLayoutWidget_2.setGeometry(QtCore.QRect(430, 30, 160, 138))
+        self.formLayoutWidget_2.setGeometry(QtCore.QRect(230, 230, 160, 138))
         self.formLayoutWidget_2.setObjectName("formLayoutWidget_2")
         self.Layout_condition = QtWidgets.QFormLayout(self.formLayoutWidget_2)
         self.Layout_condition.setContentsMargins(10, 10, 10, 10)
@@ -230,44 +254,149 @@ class Ui_MainWindow(object):
         conditon_dict["c"] = self.c_LineEdit
         conditon_dict["v"] = self.v_LineEdit
         
+        self.formLayoutWidget_4 = QtWidgets.QWidget(parent=self.tab_1)
+        self.formLayoutWidget_4.setGeometry(QtCore.QRect(230, 380, 161, 80))
+        self.formLayoutWidget_4.setObjectName("formLayoutWidget_4")
+        self.formLayout_2 = QtWidgets.QFormLayout(self.formLayoutWidget_4)
+        self.formLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.formLayout_2.setObjectName("formLayout_2")
+        self.cpsr_Label = QtWidgets.QLabel(parent=self.formLayoutWidget_4)
+        self.cpsr_Label.setObjectName("cpsr_Label")
+        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.cpsr_Label)
+        self.cpsr_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_4)
+        self.cpsr_LineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.cpsr_LineEdit.setObjectName("cpsr_LineEdit")
+        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.cpsr_LineEdit)
+        self.spsr_Label = QtWidgets.QLabel(parent=self.formLayoutWidget_4)
+        self.spsr_Label.setObjectName("spsr_Label")
+        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.spsr_Label)
+        self.spsr_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_4)
+        self.spsr_LineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spsr_LineEdit.setObjectName("spsr_LineEdit")
+        self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.ItemRole.FieldRole, self.spsr_LineEdit)
+        
         self.tabWidget.addTab(self.tab_1, "")
-        self.tab_2 = QtWidgets.QWidget()
-        self.tab_2.setObjectName("tab_2")
-        self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.tab_2)
-        self.formLayoutWidget_3.setGeometry(QtCore.QRect(20, 10, 201, 31))
+        self.tab_memory = QtWidgets.QWidget()
+        self.tab_memory.setObjectName("tab_memory")
+        self.scrollArea_2 = QtWidgets.QScrollArea(parent=self.tab_memory)
+        self.scrollArea_2.setGeometry(QtCore.QRect(320, 10, 351, 721))
+        self.scrollArea_2.setWidgetResizable(True)
+        self.scrollArea_2.setObjectName("scrollArea_2")
+        self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 349, 719))
+        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
+        self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_2)
+        self.formLayoutWidget_3.setGeometry(QtCore.QRect(50, 20, 251, 29))
         self.formLayoutWidget_3.setObjectName("formLayoutWidget_3")
         self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_3)
         self.formLayout.setContentsMargins(0, 0, 0, 0)
         self.formLayout.setObjectName("formLayout")
-        self.sizeMemory_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_3)
+        self.Address_search_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_3)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.Address_search_LineEdit.sizePolicy().hasHeightForWidth())
+        self.Address_search_LineEdit.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-        self.sizeMemory_LineEdit.setFont(font)
-        self.sizeMemory_LineEdit.setObjectName("sizeMemory_LineEdit")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.sizeMemory_LineEdit)
-        self.sizeMemory_Label = QtWidgets.QLabel(parent=self.formLayoutWidget_3)
-        self.sizeMemory_Label.setObjectName("sizeMemory_Label")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.sizeMemory_Label)
-        self.MemoryTextEdit = QtWidgets.QPlainTextEdit(parent=self.tab_2)
-        self.MemoryTextEdit.setGeometry(QtCore.QRect(20, 50, 1091, 521))
-        self.MemoryTextEdit.setObjectName("MemoryTextEdit")
-        self.tabWidget.addTab(self.tab_2, "")
-        self.label = QtWidgets.QLabel(parent=self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(290, 20, 571, 41))
-        font = QtGui.QFont()
-        font.setPointSize(24)
-        font.setBold(True)
-        font.setWeight(75)
-        self.label.setFont(font)
-        self.label.setObjectName("label")
+        self.Address_search_LineEdit.setFont(font)
+        self.Address_search_LineEdit.setObjectName("Address_search_LineEdit")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit)
+        self.GotoAddr = QtWidgets.QPushButton(parent=self.formLayoutWidget_3)
+        self.GotoAddr.setObjectName("GotoAddr")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr)
+        self.Addrr_Mem_View = QtWidgets.QTreeView(parent=self.scrollAreaWidgetContents_2)
+        self.Addrr_Mem_View.setGeometry(QtCore.QRect(10, 70, 321, 641))
+        self.Addrr_Mem_View.setObjectName("Addrr_Mem_View")
+        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
+        self.tabWidget.addTab(self.tab_memory, "")
+        self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
-        
-        plain_edit_dict["memory"] = self.MemoryTextEdit
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        
+        self.model = QtGui.QStandardItemModel(0, 2)
+        self.Addrr_Mem_View.setModel(self.model)
+        self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        self.model.setHorizontalHeaderLabels(["Address", "Memory"])
+        
+        self.current_index = 0
+        self.total_items = 1073741823
+        self.items_per_batch = 100
+
+        self.load_items()
+        self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
+        self.GotoAddr.clicked.connect(self.search_items)
+
+    def load_items(self):
+        data = []
+        for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
+            item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
+            item2 = QtGui.QStandardItem('0x' + "aaaaaaaa")
+            self.model.appendRow([item1, item2])
+        self.Addrr_Mem_View.setColumnWidth(0, 150)
+        self.Addrr_Mem_View.setColumnWidth(1, 150)
+        self.current_index += self.items_per_batch
+
+    def on_scroll(self, value):
+        max_scroll = self.Addrr_Mem_View.verticalScrollBar().maximum()
+        if value >= max_scroll and self.current_index < self.total_items:
+            self.load_items()
+
+    def search_items(self):
+        search_text = self.Address_search_LineEdit.text()
+        if search_text:
+            found = False
+            search_value  = int(search_text, 16)
+            while not found and self.current_index > 0:
+                for row in range(self.model.rowCount()):
+                    item = self.model.item(row, 0)
+                    if item is not None and search_text.lower() in item.text().lower():
+                        for col in range(self.model.columnCount()):
+                            self.model.item(row, col).setBackground(QtGui.QColor("yellow"))
+                        self.Addrr_Mem_View.scrollTo(self.model.indexFromItem(item))
+                        break
+                if not found:
+                    last_item_value = int(self.model.item(self.model.rowCount() - 1, 0).text(), 16)
+                    if search_value < last_item_value:
+                        break
+                    self.load_items()
+                    
+    def replace_items(self, listAddr, listMem):
+        replacement_dict = dict(zip(listAddr, listMem))
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row, 0)
+            if item is not None:
+                addr = item.text()
+                if addr in replacement_dict:
+                    self.model.setItem(row, 1, QtGui.QStandardItem(replacement_dict[addr]))
+                    
+    def reset_backgroud_register(self):
+        self.r0_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r1_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r2_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r3_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r4_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r5_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r6_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r7_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r8_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r9_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r10_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r11_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.r12_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.sp_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.lr_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.pc_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.n_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.z_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.c_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.v_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -278,48 +407,76 @@ class Ui_MainWindow(object):
         self.BreakPointButton.setText(_translate("MainWindow", "BreakPoint"))
         self.r0_Label.setText(_translate("MainWindow", "r0"))
         self.r0_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r0_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r1_Label.setText(_translate("MainWindow", "r1"))
         self.r1_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r1_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r2_Label.setText(_translate("MainWindow", "r2"))
         self.r2_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r2_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r3_Label.setText(_translate("MainWindow", "r3"))
         self.r3_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r3_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r4_Label.setText(_translate("MainWindow", "r4"))
         self.r4_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r4_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r5_Label.setText(_translate("MainWindow", "r5"))
         self.r5_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r5_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r6_Label.setText(_translate("MainWindow", "r6"))
         self.r6_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r6_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r7_Label.setText(_translate("MainWindow", "r7"))
         self.r7_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r7_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r8_Label.setText(_translate("MainWindow", "r8"))
         self.r8_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r8_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r9_Label.setText(_translate("MainWindow", "r9"))
         self.r9_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r9_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r10_Label.setText(_translate("MainWindow", "r10"))
         self.r10_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r10_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r11_Label.setText(_translate("MainWindow", "r11"))
         self.r11_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r11_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r12_Label.setText(_translate("MainWindow", "r12"))
         self.r12_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r12_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.sp_Label.setText(_translate("MainWindow", "sp"))
         self.sp_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.sp_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.lr_Label.setText(_translate("MainWindow", "lr"))
         self.lr_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.lr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.pc_Label.setText(_translate("MainWindow", "pc"))
         self.pc_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.pc_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.n_Label.setText(_translate("MainWindow", "N"))
         self.n_LineEdit.setText(_translate("MainWindow", "0"))
+        self.n_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.z_Label.setText(_translate("MainWindow", "Z"))
         self.z_LineEdit.setText(_translate("MainWindow", "0"))
+        self.z_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.c_Label.setText(_translate("MainWindow", "C"))
         self.c_LineEdit.setText(_translate("MainWindow", "0"))
+        self.c_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.v_Label.setText(_translate("MainWindow", "V"))
         self.v_LineEdit.setText(_translate("MainWindow", "0"))
+        self.v_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.cpsr_Label.setText(_translate("MainWindow", "cpsr"))
+        self.cpsr_LineEdit.setText(_translate("MainWindow", "0x00000000"))
+        self.cpsr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.spsr_Label.setText(_translate("MainWindow", "spsr"))
+        self.spsr_LineEdit.setText(_translate("MainWindow", "0x00000000"))
+        self.spsr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        self.ImportButton.setText(_translate("MainWindow", "Import"))
+        self.ExportButton.setText(_translate("MainWindow", "Export"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_1), _translate("MainWindow", "Editor"))
-        self.sizeMemory_LineEdit.setText(_translate("MainWindow", "32"))
-        self.sizeMemory_Label.setText(_translate("MainWindow", "Size(bytes)"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Memory"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_memory), _translate("MainWindow", "Memory"))
+        self.Address_search_LineEdit.setText(_translate("MainWindow", "0x00000000"))
+        self.GotoAddr.setText(_translate("MainWindow", "Go to Address"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
     pc = 0
@@ -331,6 +488,9 @@ class Ui_MainWindow(object):
         global pc
         memory = []
         text = self.CodeEditText.toPlainText()
+        if not text:
+            print("Không có câu lệnh nào")
+            return
         lines = text.split("\n")
         lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
@@ -355,11 +515,11 @@ class Ui_MainWindow(object):
                 memory.append(memory_line_branch)
         if data_memory:
             memory.extend(data_memory)
-        text_content = "\n".join(str(item) for item in memory)
-        self.MemoryTextEdit.setPlainText(text_content)
+        self.replace_items(self.address, memory)
         mapping = {key: value for key, value in zip(self.address, lines)}
         i = 0
         while i < len(lines):
+            self.reset_backgroud_register()
             pc_binary = self.address[i]
             self.pc_LineEdit.setText(pc_binary)
             line = mapping.get(self.address[i])
@@ -386,15 +546,18 @@ class Ui_MainWindow(object):
                 result_int = int(arguments[0], 2)
                 result_str = '0x' + format(result_int, '08x')
                 line_edit.setText(result_str)
+                line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments and len(reg) == 2 and len(arguments) == 2:
                 line_edit_1 = line_edit_dict.get(reg[0])
                 result_int_1 = int(arguments[0], 2)
                 result_str_1 = '0x' + format(result_int_1, '08x')
                 line_edit_1.setText(result_str_1)
+                line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
                 line_edit_2 = line_edit_dict.get(reg[1])
                 result_int_2 = int(arguments[1], 2)
                 result_str_2 = '0x' + format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
+                line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments is None and (flag_T or i == len(self.address)):
                 pass
             elif flag_B:
@@ -412,6 +575,15 @@ class Ui_MainWindow(object):
             z_edit.setText(flag_Z)
             c_edit.setText(flag_C)
             v_edit.setText(flag_V)
+            
+            if flag_N == '1':
+                n_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_Z == '1':
+                z_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_C == '1':
+                c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_V == '1':
+                v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
                        
     current_line_index = 0
     memory_current_line = []
@@ -445,14 +617,13 @@ class Ui_MainWindow(object):
                     self.memory_current_line.append(memory_line_branch)
             if data_memory:
                 self.memory_current_line.extend(data_memory)        
-            text_content = "\n".join(str(item) for item in self.memory_current_line)
-            self.MemoryTextEdit.setPlainText(text_content)
+            self.replace_items(self.address, self.memory_current_line)
         mapping = {key: value for key, value in zip(self.address, lines)}
         if self.current_line_index < len(lines):
+            self.reset_backgroud_register()
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
             current_line = lines[self.current_line_index]
-            print(current_line)
             if current_line.strip():
                 label, flag_B = check_branch(self, current_line, self.address, lines)
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels)
@@ -473,15 +644,18 @@ class Ui_MainWindow(object):
                 result_int = int(arguments[0], 2)
                 result_str = '0x' + format(result_int, '08x')
                 line_edit.setText(result_str)
+                line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments and len(reg) == 2 and len(arguments) == 2:
                 line_edit_1 = line_edit_dict.get(reg[0])
                 result_int_1 = int(arguments[0], 2)
                 result_str_1 = '0x' + format(result_int_1, '08x')
                 line_edit_1.setText(result_str_1)
+                line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
                 line_edit_2 = line_edit_dict.get(reg[1])
                 result_int_2 = int(arguments[1], 2)
                 result_str_2 = '0x' + format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
+                line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments is None and (flag_T or self.current_line_index == len(lines)):
                 pass
             elif flag_B:
@@ -498,6 +672,15 @@ class Ui_MainWindow(object):
             z_edit.setText(flag_Z)
             c_edit.setText(flag_C)
             v_edit.setText(flag_V)
+            
+            if flag_N == '1':
+                n_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_Z == '1':
+                z_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_C == '1':
+                c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+            if flag_V == '1':
+                v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
 
     def Restart(self):
         self.address = []
@@ -525,6 +708,12 @@ class Ui_MainWindow(object):
         self.z_LineEdit.setText("0")
         self.c_LineEdit.setText("0")
         self.v_LineEdit.setText("0")
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(["Address", "Memory"])
+        self.current_index = 0
+        self.load_items()
+        self.Address_search_LineEdit.setText('0x' + format(0, '08x'))
+        self.Addrr_Mem_View.scrollToTop()
         
 if __name__ == "__main__":
     import sys
