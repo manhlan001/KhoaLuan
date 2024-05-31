@@ -1,6 +1,6 @@
 import re
 import sys
-from dict import plain_edit_dict, line_edit_dict, conditon_dict
+from dict import line_edit_dict, conditon_dict
 import dict
 import GiaoDien
 import ctypes
@@ -28,7 +28,7 @@ def split_and_filter(line):
         final_parts.extend([sub_part for sub_part in sub_parts if sub_part.strip() != ''])
     return final_parts
         
-def check_assembly_line(self, line, address, memory, data_labels):
+def check_assembly_line(self, line, address, memory, data_labels, model):
     reg = []
     c = True
     flag_N = flag_Z = flag_C = flag_V = "0"
@@ -292,7 +292,7 @@ def check_assembly_line(self, line, address, memory, data_labels):
                 result = LDR(hex_str, address, memory)
                 arguments.append(result)
             if instruction_clean.lower() == "str":
-                STR(reg, hex_str, address, memory)
+                STR(reg, hex_str, address, memory, model)
                 flag_T = 1
                 return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -380,7 +380,7 @@ def check_assembly_line(self, line, address, memory, data_labels):
                 if num_result_str:
                     arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
-                STR(reg, hex_str, address, memory)
+                STR(reg, hex_str, address, memory, model)
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
@@ -533,7 +533,7 @@ def check_assembly_line(self, line, address, memory, data_labels):
             
             if instruction_clean.lower() == "str":
                 hex_str = num_result_str
-                STR(reg, hex_str, address, memory)
+                STR(reg, hex_str, address, memory, model)
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
@@ -985,13 +985,11 @@ def LDR(hex_str, address, memory):
         result = f"{0:032b}"
     return result
     
-def STR(reg, hex_str, address, memory):
+def STR(reg, hex_str, address, memory, model):
     mapping = {key: value for key, value in zip(address, memory)}
     result = mapping.get(hex_str)
     position = memory.index(result)
     line_edit = line_edit_dict.get(reg[0])
     binary_str = line_edit.text()
     memory[position] = binary_str
-    text_content = "\n".join(str(item) for item in memory)
-    memory_edit = plain_edit_dict.get("memory")
-    memory_edit.setPlainText(text_content)
+    dict.replace_memory(model, address, memory)

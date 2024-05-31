@@ -1,6 +1,6 @@
 import re
 import sys
-from dict import plain_edit_dict, line_edit_dict, conditon_dict
+from dict import line_edit_dict, conditon_dict
 import dict
 import ctypes
 import GiaoDien

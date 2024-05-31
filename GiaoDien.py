@@ -11,7 +11,7 @@ import re
 import sys
 import Assembly
 import data
-from dict import plain_edit_dict, line_edit_dict, conditon_dict, parse_labels
+from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory
 from Branch import check_branch, memory_branch
 import Create_memory
 from encoder import Encoder
@@ -331,7 +331,7 @@ class Ui_MainWindow(object):
 
         self.load_items()
         self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
-        self.GotoAddr.clicked.connect(self.search_items)
+        self.GotoAddr.clicked.connect(self.search_memory)
 
     def load_items(self):
         data = []
@@ -348,7 +348,7 @@ class Ui_MainWindow(object):
         if value >= max_scroll and self.current_index < self.total_items:
             self.load_items()
 
-    def search_items(self):
+    def search_memory(self):
         search_text = self.Address_search_LineEdit.text()
         if search_text:
             found = False
@@ -366,15 +366,6 @@ class Ui_MainWindow(object):
                     if search_value < last_item_value:
                         break
                     self.load_items()
-                    
-    def replace_items(self, listAddr, listMem):
-        replacement_dict = dict(zip(listAddr, listMem))
-        for row in range(self.model.rowCount()):
-            item = self.model.item(row, 0)
-            if item is not None:
-                addr = item.text()
-                if addr in replacement_dict:
-                    self.model.setItem(row, 1, QtGui.QStandardItem(replacement_dict[addr]))
                     
     def reset_backgroud_register(self):
         self.r0_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
@@ -515,7 +506,7 @@ class Ui_MainWindow(object):
                 memory.append(memory_line_branch)
         if data_memory:
             memory.extend(data_memory)
-        self.replace_items(self.address, memory)
+        replace_memory(self.model, self.address, memory)
         mapping = {key: value for key, value in zip(self.address, lines)}
         i = 0
         while i < len(lines):
@@ -525,7 +516,7 @@ class Ui_MainWindow(object):
             line = mapping.get(self.address[i])
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model)
                 i += 1
             elif not line.strip():
                 print("không có câu lệnh nào")
@@ -588,6 +579,28 @@ class Ui_MainWindow(object):
     current_line_index = 0
     memory_current_line = []
     data_labels = []
+    def reset_highlight(self):
+        cursor = self.CodeEditText.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
+        while cursor.movePosition(QtGui.QTextCursor.MoveOperation.Down, QtGui.QTextCursor.MoveMode.KeepAnchor):
+            format = QtGui.QTextCharFormat()
+            format.setBackground(QtGui.QColor("white"))
+            cursor.setCharFormat(format)
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End, QtGui.QTextCursor.MoveMode.KeepAnchor)
+        format = QtGui.QTextCharFormat()
+        format.setBackground(QtGui.QColor("white"))
+        cursor.setCharFormat(format)
+    def highlight_next_line(self):
+        self.reset_highlight()
+        cursor = self.CodeEditText.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
+        for _ in range(self.current_line_index):
+            cursor.movePosition(QtGui.QTextCursor.MoveOperation.Down)
+        cursor.select(QtGui.QTextCursor.SelectionType.LineUnderCursor)
+        format = QtGui.QTextCharFormat()
+        format.setBackground(QtGui.QColor("yellow"))
+        cursor.setCharFormat(format)
     def check_next_line(self):
         global current_line_index
         text = self.CodeEditText.toPlainText()    
@@ -617,16 +630,18 @@ class Ui_MainWindow(object):
                     self.memory_current_line.append(memory_line_branch)
             if data_memory:
                 self.memory_current_line.extend(data_memory)        
-            self.replace_items(self.address, self.memory_current_line)
+            replace_memory(self.model, self.address, self.memory_current_line)
         mapping = {key: value for key, value in zip(self.address, lines)}
         if self.current_line_index < len(lines):
             self.reset_backgroud_register()
+            self.reset_highlight()
+            self.highlight_next_line()
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
             current_line = lines[self.current_line_index]
             if current_line.strip():
                 label, flag_B = check_branch(self, current_line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model)
                 self.current_line_index += 1
             elif not line.strip():
                 print("không còn câu lệnh nào")
@@ -685,7 +700,8 @@ class Ui_MainWindow(object):
     def Restart(self):
         self.address = []
         self.memory_current_line = []
-        self.CodeEditText.setText("")
+        self.reset_backgroud_register()
+        self.reset_highlight()
         self.r0_LineEdit.setText('0x' + format(0, '08x'))
         self.r1_LineEdit.setText('0x' + format(0, '08x'))
         self.r2_LineEdit.setText('0x' + format(0, '08x'))

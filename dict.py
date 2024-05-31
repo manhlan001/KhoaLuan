@@ -1,9 +1,7 @@
+from PyQt6 import QtCore, QtGui, QtWidgets
 from decoder import Decoder
 from encoder import Encoder
 import string
-plain_edit_dict = {
-    "memory": None
-}
 
 line_edit_dict = {
     "r0": None,
@@ -529,5 +527,13 @@ def process_binary(num):
     result = rotation_bits + last_8_bits
     return result
 
+def replace_memory(model, listAddr, listMem):
+    replacement_dict = dict(zip(listAddr, listMem))
+    for row in range(model.rowCount()):
+        item = model.item(row, 0)
+        if item is not None:
+            addr = item.text()
+            if addr in replacement_dict:
+                model.setItem(row, 1, QtGui.QStandardItem(replacement_dict[addr]))
     
     
