@@ -347,8 +347,14 @@ class Ui_MainWindow(object):
         max_scroll = self.Addrr_Mem_View.verticalScrollBar().maximum()
         if value >= max_scroll and self.current_index < self.total_items:
             self.load_items()
+    
+    def reset_search_memory(self):
+        for row in range(self.model.rowCount()):
+            for col in range(self.model.columnCount()):
+                 self.model.item(row, col).setBackground(QtGui.QColor("white"))
 
     def search_memory(self):
+        self.reset_search_memory()
         search_text = self.Address_search_LineEdit.text()
         if search_text:
             found = False
@@ -700,6 +706,7 @@ class Ui_MainWindow(object):
     def Restart(self):
         self.address = []
         self.memory_current_line = []
+        self.reset_search_memory()
         self.reset_backgroud_register()
         self.reset_highlight()
         self.r0_LineEdit.setText('0x' + format(0, '08x'))
