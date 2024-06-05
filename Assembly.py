@@ -28,7 +28,7 @@ def split_and_filter(line):
         final_parts.extend([sub_part for sub_part in sub_parts if sub_part.strip() != ''])
     return final_parts
         
-def check_assembly_line(self, line, address, memory, data_labels, model):
+def check_assembly_line(self, line, address, memory, data_labels, model, model_byte):
     reg = []
     c = True
     flag_N = flag_Z = flag_C = flag_V = "0"
@@ -292,7 +292,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model):
                 result = LDR(hex_str, address, memory)
                 arguments.append(result)
             if instruction_clean.lower() == "str":
-                STR(reg, hex_str, address, memory, model)
+                STR(reg, hex_str, address, memory, model, model_byte)
                 flag_T = 1
                 return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -380,7 +380,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model):
                 if num_result_str:
                     arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
-                STR(reg, hex_str, address, memory, model)
+                STR(reg, hex_str, address, memory, model, model_byte)
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
@@ -533,7 +533,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model):
             
             if instruction_clean.lower() == "str":
                 hex_str = num_result_str
-                STR(reg, hex_str, address, memory, model)
+                STR(reg, hex_str, address, memory, model, model_byte)
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
@@ -985,7 +985,7 @@ def LDR(hex_str, address, memory):
         result = f"{0:032b}"
     return result
     
-def STR(reg, hex_str, address, memory, model):
+def STR(reg, hex_str, address, memory, model, model_byte):
     mapping = {key: value for key, value in zip(address, memory)}
     result = mapping.get(hex_str)
     position = memory.index(result)
@@ -993,3 +993,4 @@ def STR(reg, hex_str, address, memory, model):
     binary_str = line_edit.text()
     memory[position] = binary_str
     dict.replace_memory(model, address, memory)
+    dict.replace_memory_byte(model_byte, address, memory)

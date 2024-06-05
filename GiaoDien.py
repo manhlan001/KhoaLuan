@@ -11,7 +11,7 @@ import re
 import sys
 import Assembly
 import data
-from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory
+from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory, replace_memory_byte
 from Branch import check_branch, memory_branch
 import Create_memory
 from encoder import Encoder
@@ -278,60 +278,120 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_1, "")
         self.tab_memory = QtWidgets.QWidget()
         self.tab_memory.setObjectName("tab_memory")
-        self.scrollArea_2 = QtWidgets.QScrollArea(parent=self.tab_memory)
-        self.scrollArea_2.setGeometry(QtCore.QRect(320, 10, 351, 721))
-        self.scrollArea_2.setWidgetResizable(True)
-        self.scrollArea_2.setObjectName("scrollArea_2")
-        self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 349, 719))
-        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
-        self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_2)
-        self.formLayoutWidget_3.setGeometry(QtCore.QRect(50, 20, 251, 29))
-        self.formLayoutWidget_3.setObjectName("formLayoutWidget_3")
-        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_3)
-        self.formLayout.setContentsMargins(0, 0, 0, 0)
-        self.formLayout.setObjectName("formLayout")
-        self.Address_search_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_3)
+        self.stackedWidget = QtWidgets.QStackedWidget(parent=self.tab_memory)
+        self.stackedWidget.setGeometry(QtCore.QRect(290, 20, 361, 721))
+        self.stackedWidget.setObjectName("stackedWidget")
+        self.page_word = QtWidgets.QWidget()
+        self.page_word.setObjectName("page_word")
+        self.Addrr_Mem_View_Word = QtWidgets.QTreeView(parent=self.page_word)
+        self.Addrr_Mem_View_Word.setGeometry(QtCore.QRect(20, 40, 321, 671))
+        self.Addrr_Mem_View_Word.setObjectName("Addrr_Mem_View_Word")
+        self.formLayoutWidget_5 = QtWidgets.QWidget(parent=self.page_word)
+        self.formLayoutWidget_5.setGeometry(QtCore.QRect(50, 0, 251, 29))
+        self.formLayoutWidget_5.setObjectName("formLayoutWidget_5")
+        self.formLayout_4 = QtWidgets.QFormLayout(self.formLayoutWidget_5)
+        self.formLayout_4.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.formLayout_4.setFormAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.formLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.formLayout_4.setObjectName("formLayout_4")
+        self.Address_search_LineEdit_word = QtWidgets.QLineEdit(parent=self.formLayoutWidget_5)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.Address_search_LineEdit.sizePolicy().hasHeightForWidth())
-        self.Address_search_LineEdit.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(self.Address_search_LineEdit_word.sizePolicy().hasHeightForWidth())
+        self.Address_search_LineEdit_word.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-        self.Address_search_LineEdit.setFont(font)
-        self.Address_search_LineEdit.setObjectName("Address_search_LineEdit")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit)
-        self.GotoAddr = QtWidgets.QPushButton(parent=self.formLayoutWidget_3)
-        self.GotoAddr.setObjectName("GotoAddr")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr)
-        self.Addrr_Mem_View = QtWidgets.QTreeView(parent=self.scrollAreaWidgetContents_2)
-        self.Addrr_Mem_View.setGeometry(QtCore.QRect(10, 70, 321, 641))
-        self.Addrr_Mem_View.setObjectName("Addrr_Mem_View")
-        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
+        self.Address_search_LineEdit_word.setFont(font)
+        self.Address_search_LineEdit_word.setObjectName("Address_search_LineEdit_word")
+        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit_word)
+        self.GotoAddr_word = QtWidgets.QPushButton(parent=self.formLayoutWidget_5)
+        self.GotoAddr_word.setObjectName("GotoAddr_word")
+        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr_word)
+        self.stackedWidget.addWidget(self.page_word)
+        self.page_byte = QtWidgets.QWidget()
+        self.page_byte.setObjectName("page_byte")
+        self.Addrr_Mem_View_Byte = QtWidgets.QTreeView(parent=self.page_byte)
+        self.Addrr_Mem_View_Byte.setGeometry(QtCore.QRect(20, 40, 321, 671))
+        self.Addrr_Mem_View_Byte.setObjectName("Addrr_Mem_View_Byte")
+        self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.page_byte)
+        self.formLayoutWidget_3.setGeometry(QtCore.QRect(50, 0, 251, 29))
+        self.formLayoutWidget_3.setObjectName("formLayoutWidget_3")
+        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_3)
+        self.formLayout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.formLayout.setFormAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.formLayout.setContentsMargins(0, 0, 0, 0)
+        self.formLayout.setObjectName("formLayout")
+        self.Address_search_LineEdit_byte = QtWidgets.QLineEdit(parent=self.formLayoutWidget_3)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.Address_search_LineEdit_byte.sizePolicy().hasHeightForWidth())
+        self.Address_search_LineEdit_byte.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setBold(False)
+        font.setWeight(50)
+        self.Address_search_LineEdit_byte.setFont(font)
+        self.Address_search_LineEdit_byte.setObjectName("Address_search_LineEdit_byte")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit_byte)
+        self.GotoAddr_byte = QtWidgets.QPushButton(parent=self.formLayoutWidget_3)
+        self.GotoAddr_byte.setObjectName("GotoAddr_byte")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr_byte)
+        self.stackedWidget.addWidget(self.page_byte)
+        self.groupBox = QtWidgets.QGroupBox(parent=self.tab_memory)
+        self.groupBox.setGeometry(QtCore.QRect(10, 60, 271, 111))
+        self.groupBox.setObjectName("groupBox")
+        self.SizeWordButton = QtWidgets.QPushButton(parent=self.groupBox)
+        self.SizeWordButton.setGeometry(QtCore.QRect(30, 60, 91, 31))
+        self.SizeWordButton.setObjectName("SizeWordButton")
+        self.label_size_memory = QtWidgets.QLabel(parent=self.groupBox)
+        self.label_size_memory.setGeometry(QtCore.QRect(10, 30, 111, 31))
+        self.label_size_memory.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_size_memory.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.label_size_memory.setObjectName("label_size_memory")
+        self.SizeByteButton = QtWidgets.QPushButton(parent=self.groupBox)
+        self.SizeByteButton.setGeometry(QtCore.QRect(150, 60, 91, 31))
+        self.SizeByteButton.setObjectName("SizeByteButton")
+        self.label_2 = QtWidgets.QLabel(parent=self.groupBox)
+        self.label_2.setGeometry(QtCore.QRect(10, 110, 47, 13))
+        self.label_2.setText("")
+        self.label_2.setObjectName("label_2")
         self.tabWidget.addTab(self.tab_memory, "")
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
+        
+        self.SizeWordButton.clicked.connect(self.show_word_memory)
+        self.SizeByteButton.clicked.connect(self.show_byte_memory)
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
         self.model = QtGui.QStandardItemModel(0, 2)
-        self.Addrr_Mem_View.setModel(self.model)
-        self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        self.Addrr_Mem_View_Word.setModel(self.model)
+        self.Addrr_Mem_View_Word.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         self.model.setHorizontalHeaderLabels(["Address", "Memory"])
         
+        self.model_byte = QtGui.QStandardItemModel(0, 2)
+        self.Addrr_Mem_View_Byte.setModel(self.model_byte)
+        self.Addrr_Mem_View_Byte.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        self.model_byte.setHorizontalHeaderLabels(["Address", "Memory"])
+        
         self.current_index = 0
+        self.current_index_byte = 0
         self.total_items = 1073741823
         self.items_per_batch = 100
 
         self.load_items()
-        self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
-        self.GotoAddr.clicked.connect(self.search_memory)
+        self.Addrr_Mem_View_Word.verticalScrollBar().valueChanged.connect(self.on_scroll)
+        self.GotoAddr_word.clicked.connect(self.search_memory)
+        
+        self.load_items_byte()
+        self.Addrr_Mem_View_Byte.verticalScrollBar().valueChanged.connect(self.on_scroll_byte)
+        self.GotoAddr_byte.clicked.connect(self.search_memory)
 
     def load_items(self):
         data = []
@@ -339,23 +399,43 @@ class Ui_MainWindow(object):
             item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
             item2 = QtGui.QStandardItem('0x' + "aaaaaaaa")
             self.model.appendRow([item1, item2])
-        self.Addrr_Mem_View.setColumnWidth(0, 150)
-        self.Addrr_Mem_View.setColumnWidth(1, 150)
+        self.Addrr_Mem_View_Word.setColumnWidth(0, 150)
+        self.Addrr_Mem_View_Word.setColumnWidth(1, 150)
         self.current_index += self.items_per_batch
+        
+    def load_items_byte(self):
+        data = []
+        for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch, self.total_items)):
+            item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
+            item2 = QtGui.QStandardItem('0xaa' + " " + '0xaa' + " " + '0xaa' + " " + '0xaa')
+            self.model_byte.appendRow([item1, item2])
+        self.Addrr_Mem_View_Byte.setColumnWidth(0, 150)
+        self.Addrr_Mem_View_Byte.setColumnWidth(1, 150)
+        self.current_index_byte += self.items_per_batch
 
     def on_scroll(self, value):
-        max_scroll = self.Addrr_Mem_View.verticalScrollBar().maximum()
+        max_scroll = self.Addrr_Mem_View_Word.verticalScrollBar().maximum()
         if value >= max_scroll and self.current_index < self.total_items:
             self.load_items()
+    
+    def on_scroll_byte(self, value):
+        max_scroll = self.Addrr_Mem_View_Byte.verticalScrollBar().maximum()
+        if value >= max_scroll and self.current_index_byte < self.total_items:
+            self.load_items_byte()
     
     def reset_search_memory(self):
         for row in range(self.model.rowCount()):
             for col in range(self.model.columnCount()):
                  self.model.item(row, col).setBackground(QtGui.QColor("white"))
+                 
+    def reset_search_memory_byte(self):
+        for row in range(self.model_byte.rowCount()):
+            for col in range(self.model_byte.columnCount()):
+                 self.model_byte.item(row, col).setBackground(QtGui.QColor("white"))
 
     def search_memory(self):
         self.reset_search_memory()
-        search_text = self.Address_search_LineEdit.text()
+        search_text = self.Address_search_LineEdit_word.text()
         if search_text:
             found = False
             search_value  = int(search_text, 16)
@@ -365,13 +445,39 @@ class Ui_MainWindow(object):
                     if item is not None and search_text.lower() in item.text().lower():
                         for col in range(self.model.columnCount()):
                             self.model.item(row, col).setBackground(QtGui.QColor("yellow"))
-                        self.Addrr_Mem_View.scrollTo(self.model.indexFromItem(item))
+                        self.Addrr_Mem_View_Word.scrollTo(self.model.indexFromItem(item))
                         break
                 if not found:
                     last_item_value = int(self.model.item(self.model.rowCount() - 1, 0).text(), 16)
                     if search_value < last_item_value:
                         break
                     self.load_items()
+                    
+    def search_memory(self):
+        self.reset_search_memory_byte()
+        search_text = self.Address_search_LineEdit_byte.text()
+        if search_text:
+            found = False
+            search_value  = int(search_text, 16)
+            while not found and self.current_index_byte > 0:
+                for row in range(self.model_byte.rowCount()):
+                    item = self.model_byte.item(row, 0)
+                    if item is not None and search_text.lower() in item.text().lower():
+                        for col in range(self.model_byte.columnCount()):
+                            self.model_byte.item(row, col).setBackground(QtGui.QColor("yellow"))
+                        self.Addrr_Mem_View_Byte.scrollTo(self.model_byte.indexFromItem(item))
+                        break
+                if not found:
+                    last_item_value = int(self.model_byte.item(self.model_byte.rowCount() - 1, 0).text(), 16)
+                    if search_value < last_item_value:
+                        break
+                    self.load_items_byte()
+                    
+    def show_word_memory(self):
+        self.stackedWidget.setCurrentIndex(0)
+
+    def show_byte_memory(self):
+        self.stackedWidget.setCurrentIndex(1)
                     
     def reset_backgroud_register(self):
         self.r0_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
@@ -472,8 +578,14 @@ class Ui_MainWindow(object):
         self.ExportButton.setText(_translate("MainWindow", "Export"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_1), _translate("MainWindow", "Editor"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_memory), _translate("MainWindow", "Memory"))
-        self.Address_search_LineEdit.setText(_translate("MainWindow", "0x00000000"))
-        self.GotoAddr.setText(_translate("MainWindow", "Go to Address"))
+        self.Address_search_LineEdit_word.setText(_translate("MainWindow", "0x00000000"))
+        self.GotoAddr_word.setText(_translate("MainWindow", "Go to Address"))
+        self.Address_search_LineEdit_byte.setText(_translate("MainWindow", "0x00000000"))
+        self.GotoAddr_byte.setText(_translate("MainWindow", "Go to Address"))
+        self.groupBox.setTitle(_translate("MainWindow", "Option"))
+        self.SizeWordButton.setText(_translate("MainWindow", "Word"))
+        self.label_size_memory.setText(_translate("MainWindow", "Size Memory:"))
+        self.SizeByteButton.setText(_translate("MainWindow", "Byte"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
     pc = 0
@@ -513,6 +625,7 @@ class Ui_MainWindow(object):
         if data_memory:
             memory.extend(data_memory)
         replace_memory(self.model, self.address, memory)
+        replace_memory_byte(self.model_byte, self.address, memory)
         mapping = {key: value for key, value in zip(self.address, lines)}
         i = 0
         while i < len(lines):
@@ -522,7 +635,7 @@ class Ui_MainWindow(object):
             line = mapping.get(self.address[i])
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model, self.model_byte)
                 i += 1
             elif not line.strip():
                 print("không có câu lệnh nào")
@@ -637,6 +750,7 @@ class Ui_MainWindow(object):
             if data_memory:
                 self.memory_current_line.extend(data_memory)        
             replace_memory(self.model, self.address, self.memory_current_line)
+            replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
         mapping = {key: value for key, value in zip(self.address, lines)}
         if self.current_line_index < len(lines):
             self.reset_backgroud_register()
@@ -647,7 +761,7 @@ class Ui_MainWindow(object):
             current_line = lines[self.current_line_index]
             if current_line.strip():
                 label, flag_B = check_branch(self, current_line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
                 self.current_line_index += 1
             elif not line.strip():
                 print("không còn câu lệnh nào")
