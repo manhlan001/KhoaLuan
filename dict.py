@@ -216,11 +216,11 @@ def check_condition(condition):
     if (condition.lower() == ""):
         return True
 
-def l_shift_32_c(a, shift_val):
+def l_shift_32_c(a, shift_val, line):
     result = []
-    assert isinstance(a, str) and isinstance(shift_val, int)
-    assert len(a) == 32
-    assert 0 <= shift_val <= 32
+    if not isinstance(a, str) or not isinstance(shift_val, int) or len(a) != 32 or (not (0 <= shift_val <= 32)):
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     carry = None
     if shift_val == 0:
         carry = '0'
@@ -231,11 +231,11 @@ def l_shift_32_c(a, shift_val):
     result.append(a)
     return result, carry
 
-def r_shift_32_c(a, shift_val):
+def r_shift_32_c(a, shift_val, line):
     result = []
-    assert isinstance(a, str) and isinstance(shift_val, int)
-    assert len(a) == 32
-    assert 0 <= shift_val <= 32
+    if not isinstance(a, str) or not isinstance(shift_val, int) or len(a) != 32 or (not (0 <= shift_val <= 32)):
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     carry = None
     if shift_val == 0:
         carry = '0'
@@ -246,11 +246,11 @@ def r_shift_32_c(a, shift_val):
     result.append(a)
     return result, carry
 
-def asr_shift_32_c(a, shift_val):
+def asr_shift_32_c(a, shift_val, line):
     result = []
-    assert isinstance(a, str) and isinstance(shift_val, int)
-    assert len(a) == 32
-    assert 0 <= shift_val <= 32
+    if not isinstance(a, str) or not isinstance(shift_val, int) or len(a) != 32 or (not (0 <= shift_val <= 32)):
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     sign_bit = a[0]
     carry = None
     if shift_val == 0:
@@ -262,11 +262,11 @@ def asr_shift_32_c(a, shift_val):
     result.append(a)
     return result, carry
 
-def ror_shift_32_c(a, shift_val):
+def ror_shift_32_c(a, shift_val, line):
     result = []
-    assert isinstance(a, str) and isinstance(shift_val, int)
-    assert len(a) == 32
-    assert 0 <= shift_val <= 32
+    if not isinstance(a, str) or not isinstance(shift_val, int) or len(a) != 32 or (not (0 <= shift_val <= 32)):
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     if shift_val == 0:
         carry = '0'
     else:
@@ -277,20 +277,24 @@ def ror_shift_32_c(a, shift_val):
     return result, carry
 
 
-def rrx_shift_32_c(a, carry_in):
+def rrx_shift_32_c(a, carry_in, line):
     result = []
-    assert isinstance(a, str) and len(a) == 32
-    assert isinstance(carry_in, str) and len(carry_in) == 1
+    if not isinstance(a, str) or len(a) != 32 or not isinstance(carry_in, str) or len(carry_in) != 1:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     carry_out = a[-1]
     shifted_str = carry_in + a[:-1]
-    assert len(shifted_str) == 32
+    if len(shifted_str) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a shift operation --" + line)
+        return None, None
     result.append(shifted_str)
     return result, carry_out
 
-def and_32(str1, str2):
+def and_32(str1, str2, line):
     result = []
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a logic operation --" + line)
+        return None
     num1 = int(str1, 2)
     num2 = int(str2, 2)
     result_int = num1 & num2
@@ -300,10 +304,11 @@ def and_32(str1, str2):
     result.append(result_str)
     return result
 
-def or_32(str1, str2):
+def or_32(str1, str2, line):
     result = []
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a logic operation --" + line)
+        return None
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
     result_int = num1 | num2  
@@ -313,10 +318,11 @@ def or_32(str1, str2):
     result.append(result_str)
     return result
 
-def xor_32(str1, str2):
+def xor_32(str1, str2, line):
     result = []
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for a logic operation --" + line)
+        return None
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
     result_int = num1 ^ num2
@@ -326,13 +332,16 @@ def xor_32(str1, str2):
     result.append(result_str)
     return result
 
-def sub_32(temporary):
+def sub_32(temporary, line): 
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
     result_int = num1 - num2
@@ -352,13 +361,16 @@ def detect_overflow_sub(a, b, res):
         return '1'
     return '0'
 
-def add_32(temporary):
+def add_32(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
     result_int = num1 + num2
@@ -378,13 +390,16 @@ def detect_overflow_add(a, b, res):
         return '1'
     return '0'
 
-def mul_32(temporary):
+def mul_32(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)  
     num2 = int(str2, 2)  
     result_int = num1 * num2
@@ -394,13 +409,16 @@ def mul_32(temporary):
     result.append(result_str)
     return result
 
-def mul_64_unsigned(temporary):
+def mul_64_unsigned(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)
     num2 = int(str2, 2)
     result_int = num1 * num2
@@ -412,13 +430,16 @@ def mul_64_unsigned(temporary):
     result.append(upper_32_str)
     return result
 
-def mul_64_signed(temporary):
+def mul_64_signed(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)
     if num1 >= 2**31:
         num1 -= 2**32
@@ -438,35 +459,45 @@ def mul_64_signed(temporary):
     result.append(upper_32_str)
     return result
 
-def divide_32_unsigned(temporary):
+def divide_32_unsigned(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)
     num2 = int(str2, 2)
-    assert num2 != 0
+    if num2 == 0:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     result_int = num1 // num2
     result_str = f"{result_int:032b}"
     result.append(result_str)
     return result
 
-def divide_32_signed(temporary):
+def divide_32_signed(temporary, line):
     result = []
-    assert len(temporary) == 2
+    if len(temporary) != 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     str1 = temporary[0]
     str2 = temporary[1]
-    assert isinstance(str1, str) and isinstance(str2, str)
-    assert len(str1) == 32 and len(str2) == 32
+    if not isinstance(str1, str) or not isinstance(str2, str) or len(str1) != 32 or len(str2) != 32:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     num1 = int(str1, 2)
     if num1 >= 2**31:
         num1 -= 2**32
     num2 = int(str2, 2)
     if num2 >= 2**31:
         num2 -= 2**32
-    assert num2 != 0
+    if num2 == 0:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
+        return None
     result_int = num1 // num2
     if result_int < 0:
         result_int += 2**32
@@ -475,8 +506,8 @@ def divide_32_signed(temporary):
     return result
 
 def complement(binary_str):
-    assert isinstance(binary_str, str)
-    assert all(bit in '01' for bit in binary_str)
+    if not isinstance(binary_str, str) or not all(bit in '01' for bit in binary_str):
+        raise ValueError("undefined input for a complement")
     complement_str = ''.join('1' if bit == '0' else '0' for bit in binary_str)
     return complement_str
 

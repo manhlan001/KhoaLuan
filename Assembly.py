@@ -1,3 +1,4 @@
+from PyQt6 import QtCore, QtGui, QtWidgets
 import re
 import sys
 from dict import line_edit_dict, conditon_dict
@@ -61,7 +62,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
     if not regex_register.match(reg[0]):
         return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     
-    if regex_register.match(reg[0]) and reg[0].lower() == "r13" or reg[0].lower() == "r15":
+    if regex_register.match(reg[0]) and reg[0].lower() == "sp" or reg[0].lower() == "pc":
         return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     
     if len(mem) > 4:
@@ -109,7 +110,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                             num_str = num_rrx.text()
                             t.append(binary_str)
                             t.append(num_str)
-                            binary_str, _ = Check_Shift(t, mem[i + 1])
+                            binary_str, _ = Check_Shift(t, mem[i + 1], line)
                             temporary.append(binary_str[0])
                             break
                         elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
@@ -119,7 +120,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                 num_str = Encoder(num)
                                 t.append(binary_str)
                                 t.append(num_str)
-                                binary_str, _ = Check_Shift(t, mem[i + 1])
+                                binary_str, _ = Check_Shift(t, mem[i + 1], line)
                                 temporary.append(binary_str[0])
                                 break
                             elif regex_register.match(mem[i + 2]):
@@ -129,7 +130,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                 num_str = Encoder(num)
                                 t.append(binary_str)
                                 t.append(num_str)
-                                binary_str, _ = Check_Shift(t, mem[i + 1])
+                                binary_str, _ = Check_Shift(t, mem[i + 1], line)
                                 temporary.append(binary_str[0])
                                 break
                     binary_str = Decoder(binary_str)
@@ -139,22 +140,22 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
             
             if flag == 1 and SHIFT_REGEX.match(instruction_clean):
-                arguments, flag_C = Check_Command_With_Flag(temporary, instruction_clean)
+                arguments, flag_C = Check_Command_With_Flag(temporary, instruction_clean, line)
                 result = arguments[0]
                 flag_N = result[0]
                 if Decoder(result) == 0: flag_Z = '1'
             elif flag == 1 and VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB.match(instruction_clean):
-                arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean)
+                arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean, line)
                 result = arguments[0]
                 flag_N = result[0]
                 if Decoder(result) == 0: flag_Z = '1'
             elif flag == 1:
-                arguments = Check_Command(temporary, instruction_clean)
+                arguments = Check_Command(temporary, instruction_clean, line)
                 result = arguments[0]
                 flag_N = result[0]
                 if Decoder(result) == 0: flag_Z = '1'
             else:
-                arguments = Check_Command(temporary, instruction_clean)
+                arguments = Check_Command(temporary, instruction_clean, line)
             
             if not c:
                 arguments.append(f"{0:032b}")
@@ -202,7 +203,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                             num_str = num_rrx.text()
                             t.append(binary_str_2)
                             t.append(num_str)
-                            binary_str, _ = Check_Shift(t, mem[i + 1])
+                            binary_str, _ = Check_Shift(t, mem[i + 1], line)
                             binary_str_2 = binary_str[0]
                             break
                         elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
@@ -212,7 +213,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                 num_str = Encoder(num)
                                 t.append(binary_str_2)
                                 t.append(num_str)
-                                binary_str, _ = Check_Shift(t, mem[i + 1])
+                                binary_str, _ = Check_Shift(t, mem[i + 1], line)
                                 binary_str_2 = binary_str[0]
                                 break
                             elif regex_register.match(mem[i + 2]):
@@ -221,7 +222,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                 num_str = Encoder(num)
                                 t.append(binary_str_2)
                                 t.append(num_str)
-                                binary_str, _ = Check_Shift(t, mem[i + 1])
+                                binary_str, _ = Check_Shift(t, mem[i + 1], line)
                                 binary_str_2 = binary_str[0]
                                 break
                         else:
@@ -234,9 +235,9 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
             temporary.append(binary_str_2)
             regex = re.compile(r"(CMP|CMN)", re.IGNORECASE)
             if regex.match(instruction_clean):
-                arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean)
+                arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean, line)
             else:
-                arguments = Check_Command_With_Flag(temporary, instruction_clean)
+                arguments = Check_Command_With_Flag(temporary, instruction_clean, line)
             
             if not c:
                 arguments.append(f"{0:032b}")
@@ -417,7 +418,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                     num_str = num_rrx.text()
                                     temp.append(hex_str_in)
                                     temp.append(num_str)
-                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                     break
                                 elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
                                     if regex_const.match(mem[i + 2]):
@@ -426,7 +427,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                         num_str = Encoder(num)
                                         temp.append(hex_str_in)
                                         temp.append(num_str)
-                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                         break
                                     elif regex_register.match(mem[i + 2]):
                                         num_edit = line_edit_dict.get(mem[i + 2])
@@ -435,7 +436,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                         num_str = Encoder(num)
                                         temp.append(hex_str_in)
                                         temp.append(num_str)
-                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                         break
                         else:
                             return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -496,7 +497,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                 num_str = num_rrx.text()
                                 temp.append(hex_str_in)
                                 temp.append(num_str)
-                                binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                 break
                             elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
                                 if regex_const.match(mem[i + 2]):
@@ -505,7 +506,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                     num_str = Encoder(num)
                                     temp.append(hex_str_in)
                                     temp.append(num_str)
-                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                     break
                                 elif regex_register.match(mem[i + 2]):
                                     num_edit = line_edit_dict.get(mem[i + 2])
@@ -514,7 +515,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                                     num_str = Encoder(num)
                                     temp.append(hex_str_in)
                                     temp.append(num_str)
-                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1])
+                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
                                     break
                     else:
                         return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -600,9 +601,9 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                 if Decoder(result) == 0: flag_Z = '1'
             
             if u != None and l == 1:    
-                arguments = Check_Command_Long(temporary, instruction_clean, u, reg)
+                arguments = Check_Command_Long(temporary, instruction_clean, u, reg, line)
             elif u == None and l == None:
-                arguments = Check_Command(temporary, instruction_clean)
+                arguments = Check_Command(temporary, instruction_clean, line)
             else:
                 return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -618,230 +619,238 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
     else:
         return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
     
-def Check_Shift(temporary, instruction):
+def Check_Shift(temporary, instruction, line):
     if (instruction.lower() == "lsr"):
-        results, carry = LSR_C(temporary)
+        results, carry = LSR_C(temporary, line)
     elif (instruction.lower() == "lsl"):
-        results, carry = LSL_C(temporary)
+        results, carry = LSL_C(temporary, line)
     elif (instruction.lower() == "asr"):
-        results, carry = ASR_C(temporary)
+        results, carry = ASR_C(temporary, line)
     elif (instruction.lower() == "ror"):
-        results, carry = ROR_C(temporary)
+        results, carry = ROR_C(temporary, line)
     elif (instruction.lower() == "rrx"):
-        results, carry = RRX_C(temporary)
+        results, carry = RRX_C(temporary, line)
     return results, carry
     
-def Check_Command(temporary, instruction):
+def Check_Command(temporary, instruction, line):
     arguments = []
     if(instruction.lower() == "mov"):
-        arguments = MOV(temporary)
+        arguments = MOV(temporary, line)
     elif (instruction.lower() == "lsr"):
-        arguments, _ = LSR_C(temporary)
+        arguments, _ = LSR_C(temporary, line)
     elif (instruction.lower() == "lsl"):
-        arguments, _ = LSL_C(temporary)
+        arguments, _ = LSL_C(temporary, line)
     elif (instruction.lower() == "asr"):
-        arguments, _ = ASR_C(temporary)
+        arguments, _ = ASR_C(temporary, line)
     elif (instruction.lower() == "ror"):
-        arguments, _ = ROR_C(temporary)
+        arguments, _ = ROR_C(temporary, line)
     elif (instruction.lower() == "rrx"):
-        arguments, _ = RRX_C(temporary)
+        arguments, _ = RRX_C(temporary, line)
     elif (instruction.lower() == "and"):
-        arguments = AND(temporary)
+        arguments = AND(temporary, line)
     elif (instruction.lower() == "bic"):
-        arguments = BIC(temporary)
+        arguments = BIC(temporary, line)
     elif (instruction.lower() == "orr"):
-        arguments = ORR(temporary)
+        arguments = ORR(temporary, line)
     elif (instruction.lower() == "orn"):
-        arguments = ORN(temporary)
+        arguments = ORN(temporary, line)
     elif (instruction.lower() == "eor"):
-        arguments = EOR(temporary)
+        arguments = EOR(temporary, line)
     elif(instruction.lower() == "mvn"):
-        arguments = MVN(temporary)
+        arguments = MVN(temporary, line)
     elif(instruction.lower() == "add"):
-        arguments, _, _ = dict.add_32(temporary)
+        arguments, _, _ = dict.add_32(temporary, line)
     elif(instruction.lower() == "adc"):
-        arguments, _, _ = ADC(temporary)
+        arguments, _, _ = ADC(temporary, line)
     elif(instruction.lower() == "sub"):
-        arguments, _, _ = dict.sub_32(temporary)
+        arguments, _, _ = dict.sub_32(temporary, line)
     elif(instruction.lower() == "sbc"):
-        arguments, _, _ = SBC(temporary)
+        arguments, _, _ = SBC(temporary, line)
     elif(instruction.lower() == "rsb"):
-        arguments, _, _ = RSB(temporary)
+        arguments, _, _ = RSB(temporary, line)
     elif(instruction.lower() == "mul"):
-        arguments = dict.mul_32(temporary)
+        arguments = dict.mul_32(temporary, line)
     elif(instruction.lower() == "mla"):
-        arguments = MLA(temporary)
+        arguments = MLA(temporary, line)
     elif(instruction.lower() == "mls"):
-        arguments = MLS(temporary)
+        arguments = MLS(temporary, line)
     return arguments
 
-def Check_Command_With_Flag(temporary, instruction):
+def Check_Command_With_Flag(temporary, instruction, line):
     arguments = []
     if (instruction.lower() == "lsr"):
-        arguments, carry = LSR_C(temporary)
+        arguments, carry = LSR_C(temporary, line)
     elif (instruction.lower() == "lsl"):
-        arguments, carry = LSL_C(temporary)
+        arguments, carry = LSL_C(temporary, line)
     elif (instruction.lower() == "asr"):
-        arguments, carry = ASR_C(temporary)
+        arguments, carry = ASR_C(temporary, line)
     elif (instruction.lower() == "ror"):
-        arguments, carry = ROR_C(temporary)
+        arguments, carry = ROR_C(temporary, line)
     elif (instruction.lower() == "rrx"):
-        arguments, carry = RRX_C(temporary)
+        arguments, carry = RRX_C(temporary, line)
     elif(instruction.lower() == "add"):
-        arguments, carry, overflow = dict.add_32(temporary)
+        arguments, carry, overflow = dict.add_32(temporary, line)
         return arguments, carry, overflow
     elif(instruction.lower() == "adc"):
-        arguments, carry, overflow = ADC(temporary)
+        arguments, carry, overflow = ADC(temporary, line)
         return arguments, carry, overflow
     elif(instruction.lower() == "sub"):
-        arguments, carry, overflow = dict.sub_32(temporary)
+        arguments, carry, overflow = dict.sub_32(temporary, line)
         return arguments, carry, overflow
     elif(instruction.lower() == "sbc"):
-        arguments, carry, overflow = SBC(temporary)
+        arguments, carry, overflow = SBC(temporary, line)
         return arguments, carry, overflow
     elif(instruction.lower() == "rsb"):
-        arguments, carry, overflow = RSB(temporary)
+        arguments, carry, overflow = RSB(temporary, line)
         return arguments, carry, overflow
     elif (instruction.lower() == "cmp"):
-        arguments, carry, overflow = dict.sub_32(temporary)
+        arguments, carry, overflow = dict.sub_32(temporary, line)
         return arguments, carry, overflow
     elif (instruction.lower() == "cmn"):
-        arguments, carry, overflow = dict.add_32(temporary)
+        arguments, carry, overflow = dict.add_32(temporary, line)
         return arguments, carry, overflow
     elif (instruction.lower() == "tst"):
-        arguments = AND(temporary)
+        arguments = AND(temporary, line)
         return arguments
     elif (instruction.lower() == "teq"):
-        arguments = EOR(temporary)
+        arguments = EOR(temporary, line)
         return arguments
     return arguments, carry
 
-def Check_Command_Long(temporary, instruction, u, reg):
+def Check_Command_Long(temporary, instruction, u, reg, line):
     arguments = []
     if(instruction.lower() == "mul") and u == 0:
-        arguments = dict.mul_64_unsigned(temporary)
+        arguments = dict.mul_64_unsigned(temporary, line)
     elif(instruction.lower() == "mul") and u == 1:
-        arguments = dict.mul_64_signed(temporary)
+        arguments = dict.mul_64_signed(temporary, line)
     elif(instruction.lower() == "mla") and u == 0:
-        arguments = UMLA(temporary, reg)
+        arguments = UMLA(temporary, reg, line)
     elif(instruction.lower() == "mla") and u == 1:
-        arguments = SMLA(temporary, reg)
+        arguments = SMLA(temporary, reg, line)
     elif(instruction.lower() == "mls") and u == 0:
-        arguments = UMLS(temporary, reg)
+        arguments = UMLS(temporary, reg, line)
     elif(instruction.lower() == "mls") and u == 1:
-        arguments = SMLS(temporary, reg)
+        arguments = SMLS(temporary, reg, line)
     return arguments
-def MOV(temporary):
+
+def MOV(temporary, line):
     if len(temporary) == 1:
         result = temporary
         return result
     else:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     
-def MVN(temporary):
+def MVN(temporary, line):
     result = []
     if len(temporary) == 1:
         result.append(dict.complement(temporary[0]))
         return result
     else:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
        
-def LSR_C(temporary):
+def LSR_C(temporary, line):
     if len(temporary) < 2:
         carry = '0'
         return None, carry
     else:
         num = Decoder(temporary[1])
-        result, carry = dict.r_shift_32_c(temporary[0], num)
+        result, carry = dict.r_shift_32_c(temporary[0], num, line)
         return result, carry
         
-def LSL_C(temporary):
+def LSL_C(temporary, line):
     if len(temporary) < 2:
         carry = '0'
         return None, carry
     else:
         num = Decoder(temporary[1])
-        result, carry = dict.l_shift_32_c(temporary[0], num)
+        result, carry = dict.l_shift_32_c(temporary[0], num, line)
         return result, carry
     
-def ASR_C(temporary):
+def ASR_C(temporary, line):
     if len(temporary) < 2:
         carry = '0'
         return None, carry
     else:
         num = Decoder(temporary[1])
-        result, carry = dict.asr_shift_32_c(temporary[0], num)
+        result, carry = dict.asr_shift_32_c(temporary[0], num, line)
         return result, carry
 
-def ROR_C(temporary):
+def ROR_C(temporary, line):
     if len(temporary) < 2:
         carry = '0'
         return None, carry
     else:
         num = Decoder(temporary[1])
-        result, carry = dict.ror_shift_32_c(temporary[0], num)
+        result, carry = dict.ror_shift_32_c(temporary[0], num, line)
         return result, carry
     
-def RRX_C(temporary):
+def RRX_C(temporary, line):
     if len(temporary) == 1:
         carry_in = conditon_dict.get("c")
         carry_in = carry_in.text()
-        result, carry = dict.rrx_shift_32_c(temporary[0], carry_in)
+        result, carry = dict.rrx_shift_32_c(temporary[0], carry_in, line)
         return result, carry
     else:
         carry = '0'
         return None, carry
     
-def AND(temporary):
+def AND(temporary, line):
     if len(temporary) < 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     else:
-        result = dict.and_32(temporary[0], temporary[1])
+        result = dict.and_32(temporary[0], temporary[1], line)
         return result
     
-def BIC(temporary):
+def BIC(temporary, line):
     if len(temporary) < 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     else:
         binary_str = dict.complement(temporary[1])
-        result = dict.and_32(temporary[0], binary_str)
+        result = dict.and_32(temporary[0], binary_str, line)
         return result
     
-def ORR(temporary):
+def ORR(temporary, line):
     if len(temporary) < 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     else:
-        result = dict.or_32(temporary[0], temporary[1])
+        result = dict.or_32(temporary[0], temporary[1], line)
         return result
     
-def ORN(temporary):
+def ORN(temporary, line):
     if len(temporary) < 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     else:
         binary_str = dict.complement(temporary[1])
-        result = dict.or_32(temporary[0], binary_str)
+        result = dict.or_32(temporary[0], binary_str, line)
         return result
     
-def EOR(temporary):
+def EOR(temporary, line):
     if len(temporary) < 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
         return None
     else:
-        result = dict.xor_32(temporary[0], temporary[1])
+        result = dict.xor_32(temporary[0], temporary[1], line)
         return result
 
-def ADC(temporary):
+def ADC(temporary, line):
     t = []
     carry_in = conditon_dict.get("c")
     carry_in = carry_in.text()
     carry_int = int(carry_in)
     c = Encoder(carry_int)
-    result, _, _ = dict.add_32(temporary)
+    result, _, _ = dict.add_32(temporary, line)
     t.append(result[0])
     t.append(c)
-    arguments, carry, overflow = dict.add_32(t)
+    arguments, carry, overflow = dict.add_32(t, line)
     return arguments, carry, overflow
 
-def SBC(temporary):
+def SBC(temporary, line):
     t = []
     carry_in = conditon_dict.get("c")
     carry_in = carry_in.text()
@@ -851,46 +860,51 @@ def SBC(temporary):
     elif carry_int == 1:
         carry_int = 0
     c = Encoder(carry_int)
-    result, _, _ = dict.sub_32(temporary)
+    result, _, _ = dict.sub_32(temporary, line)
     t.append(result[0])
     t.append(c)
-    arguments, carry, overflow = dict.sub_32(t)
+    arguments, carry, overflow = dict.sub_32(t, line)
     return arguments, carry, overflow
     
-def RSB(temporary):
+def RSB(temporary, line):
     t = temporary[0]
     temporary[0] = temporary[1]
     temporary[1] = t
-    arguments, carry, overflow = dict.sub_32(temporary)
+    arguments, carry, overflow = dict.sub_32(temporary, line)
     return arguments, carry, overflow
 
-def MLA(temporary):
-    assert len(temporary) == 3
+def MLA(temporary, line):
+    if len(temporary) != 3:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     temp_1 = []
     temp_1.append(temporary[0])
     temp_1.append(temporary[1])
-    t = dict.mul_32(temp_1)
+    t = dict.mul_32(temp_1, line)
     temp_2 = []
     temp_2.append(temporary[2])
     temp_2.append(t[0])
-    result, _, _ = dict.add_32(temp_2)
+    result, _, _ = dict.add_32(temp_2, line)
     return result
 
-def MLS(temporary):
-    assert len(temporary) == 3
+def MLS(temporary, line):
+    if len(temporary) != 3:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     temp_1 = []
     temp_1.append(temporary[0])
     temp_1.append(temporary[1])
-    t = dict.mul_32(temp_1)
+    t = dict.mul_32(temp_1, line)
     temp_2 = []
     temp_2.append(temporary[2])
     temp_2.append(t[0])
-    result, _, _ = dict.sub_32(temp_2)
+    result, _, _ = dict.sub_32(temp_2, line)
     return result
 
-def UMLA(temporary, reg):
-    assert len(temporary) == 2
-    assert len(reg) == 2
+def UMLA(temporary, reg, line):
+    if len(temporary) != 2 or len(reg) == 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     result = []
     hi = line_edit_dict.get(reg[1])
     num_hi_str = hi.text()
@@ -898,7 +912,7 @@ def UMLA(temporary, reg):
     num_lo_str = lo.text()
     num_1_64bit = num_hi_str + num_lo_str
     num_1 = int(num_1_64bit, 2)
-    t = dict.mul_64_unsigned(temporary)
+    t = dict.mul_64_unsigned(temporary, line)
     num_2_64bit = t[1] + t[0]
     num_2 = int(num_2_64bit, 2)
     num_result = num_1 + num_2
@@ -910,9 +924,10 @@ def UMLA(temporary, reg):
     result.append(upper_32_str)
     return result
 
-def SMLA(temporary, reg):
-    assert len(temporary) == 2
-    assert len(reg) == 2
+def SMLA(temporary, reg, line):
+    if len(temporary) != 2 or len(reg) == 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     result = []
     hi = line_edit_dict.get(reg[1])
     num_hi_str = hi.text()
@@ -920,7 +935,7 @@ def SMLA(temporary, reg):
     num_lo_str = lo.text()
     num_1_64bit = num_hi_str + num_lo_str
     num_1 = int(num_1_64bit, 2)
-    t = dict.mul_64_signed(temporary)
+    t = dict.mul_64_signed(temporary, line)
     num_2_64bit = t[1] + t[0]
     num_2 = int(num_2_64bit, 2)
     num_result = num_1 + num_2
@@ -932,9 +947,10 @@ def SMLA(temporary, reg):
     result.append(upper_32_str)
     return result
 
-def UMLS(temporary, reg):
-    assert len(temporary) == 2
-    assert len(reg) == 2
+def UMLS(temporary, reg, line):
+    if len(temporary) != 2 or len(reg) == 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     result = []
     hi = line_edit_dict.get(reg[1])
     num_hi_str = hi.text()
@@ -942,7 +958,7 @@ def UMLS(temporary, reg):
     num_lo_str = lo.text()
     num_1_64bit = num_hi_str + num_lo_str
     num_1 = int(num_1_64bit, 2)
-    t = dict.mul_64_unsigned(temporary)
+    t = dict.mul_64_unsigned(temporary, line)
     num_2_64bit = t[1] + t[0]
     num_2 = int(num_2_64bit, 2)
     num_result = num_1 - num_2
@@ -954,9 +970,10 @@ def UMLS(temporary, reg):
     result.append(upper_32_str)
     return result
 
-def SMLS(temporary, reg):
-    assert len(temporary) == 2
-    assert len(reg) == 2
+def SMLS(temporary, reg, line):
+    if len(temporary) != 2 or len(reg) == 2:
+        QtWidgets.QMessageBox.critical(None, "Lỗi", "Bad arguments to instruction --" + line)
+        return None
     result = []
     hi = line_edit_dict.get(reg[1])
     num_hi_str = hi.text()
@@ -964,7 +981,7 @@ def SMLS(temporary, reg):
     num_lo_str = lo.text()
     num_1_64bit = num_hi_str + num_lo_str
     num_1 = int(num_1_64bit, 2)
-    t = dict.mul_64_signed(temporary)
+    t = dict.mul_64_signed(temporary, line)
     num_2_64bit = t[1] + t[0]
     num_2 = int(num_2_64bit, 2)
     num_result = num_1 - num_2

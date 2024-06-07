@@ -598,7 +598,7 @@ class Ui_MainWindow(object):
         memory = []
         text = self.CodeEditText.toPlainText()
         if not text:
-            print("Không có câu lệnh nào")
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
             return
         lines = text.split("\n")
         lines, data_lines = data.parse_data(lines)
@@ -638,7 +638,7 @@ class Ui_MainWindow(object):
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model, self.model_byte)
                 i += 1
             elif not line.strip():
-                print("không có câu lệnh nào")
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
                 break
             
             if label in labels:
@@ -648,7 +648,7 @@ class Ui_MainWindow(object):
                 position = lines.index(label)
                 i = position
             elif label != None:
-                print("Không tìm thấy label: " + label + " trong chương trình")
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " trong chương trình")
                 break
             
             if arguments and len(reg) == 1 and len(arguments) == 1:
@@ -673,7 +673,7 @@ class Ui_MainWindow(object):
             elif flag_B:
                 pass
             elif arguments is None:
-                print("Lệnh " + "[" + mapping.get(self.address[i]) + "]"+ " không hợp lệ")
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + line + "]"+ " không hợp lệ")
                 break
                 
             n_edit = conditon_dict.get("n")
@@ -764,7 +764,7 @@ class Ui_MainWindow(object):
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
                 self.current_line_index += 1
             elif not line.strip():
-                print("không còn câu lệnh nào")
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
                 pass
             
             if label in labels:
@@ -796,7 +796,8 @@ class Ui_MainWindow(object):
             elif flag_B:
                 pass
             elif arguments is None or flag_B == None:
-                print("Lệnh " + "[" + current_line + "]"+ " không hợp lệ")
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + current_line + "]"+ " không hợp lệ")
+                return
                     
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
@@ -849,8 +850,14 @@ class Ui_MainWindow(object):
         self.model.setHorizontalHeaderLabels(["Address", "Memory"])
         self.current_index = 0
         self.load_items()
-        self.Address_search_LineEdit.setText('0x' + format(0, '08x'))
-        self.Addrr_Mem_View.scrollToTop()
+        self.Address_search_LineEdit_word.setText('0x' + format(0, '08x'))
+        self.Addrr_Mem_View_Word.scrollToTop()
+        self.model_byte.clear()
+        self.model_byte.setHorizontalHeaderLabels(["Address", "Memory"])
+        self.current_index_byte = 0
+        self.load_items_byte()
+        self.Address_search_LineEdit_byte.setText('0x' + format(0, '08x'))
+        self.Addrr_Mem_View_Byte.scrollToTop()
         
 if __name__ == "__main__":
     import sys
