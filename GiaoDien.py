@@ -77,6 +77,8 @@ class Ui_MainWindow(object):
         self.SimulateButton.clicked.connect(self.Check)
         self.RestarButton.clicked.connect(self.Restart)
         self.StepButton.clicked.connect(self.check_next_line)
+        self.ImportButton.clicked.connect(self.import_file)
+        self.ExportButton.clicked.connect(self.export)
         
         self.formLayoutWidget = QtWidgets.QWidget(parent=self.tab_1)
         self.formLayoutWidget.setGeometry(QtCore.QRect(10, 180, 201, 511))
@@ -858,6 +860,30 @@ class Ui_MainWindow(object):
         self.load_items_byte()
         self.Address_search_LineEdit_byte.setText('0x' + format(0, '08x'))
         self.Addrr_Mem_View_Byte.scrollToTop()
+        
+    def export(self):
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save File", "", "Text Files (*.txt);;Assembly Files (*.s)")
+        if file_path:
+            try:
+                file_content = self.CodeEditText.toPlainText()
+                with open(file_path, 'w') as file:
+                    file.write(file_content)
+                file_name = file_path.split('/')[-1]
+                QtWidgets.QMessageBox.information(None, "Success", f"Đã lưu file {file_name} thành công ")
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(None, "Error", f"Lưu file {file_path}\n{e} thất bại, vui lòng kiểm tra lại")
+        
+    def import_file(self):
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Import File", "", "Assembly Files (*.s);;Text Files (*.txt)")
+        if file_path:
+            try:
+                with open(file_path, 'r') as file:
+                    file_content = file.read()
+                self.CodeEditText.setPlainText(file_content)
+                file_name = file_path.split('/')[-1]  
+                QtWidgets.QMessageBox.information(None, "Success", f"Đã thêm file {file_name} thành công ")
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(None, "Error", f"Mở file {file_name}\n{e} thất bại, vui lòng kiểm tra lại")
         
 if __name__ == "__main__":
     import sys
