@@ -393,7 +393,7 @@ class Ui_MainWindow(object):
         
         self.load_items_byte()
         self.Addrr_Mem_View_Byte.verticalScrollBar().valueChanged.connect(self.on_scroll_byte)
-        self.GotoAddr_byte.clicked.connect(self.search_memory)
+        self.GotoAddr_byte.clicked.connect(self.search_memory_byte)
 
     def load_items(self):
         data = []
@@ -455,7 +455,7 @@ class Ui_MainWindow(object):
                         break
                     self.load_items()
                     
-    def search_memory(self):
+    def search_memory_byte(self):
         self.reset_search_memory_byte()
         search_text = self.Address_search_LineEdit_byte.text()
         if search_text:
