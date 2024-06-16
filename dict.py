@@ -117,7 +117,6 @@ def parse_labels(input_lines):
     labels = {}
     current_label = None
     remaining_lines = []
-
     for line in input_lines:
         stripped_line = line.strip()
         result = is_special_or_digit(stripped_line)

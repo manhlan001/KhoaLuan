@@ -11,6 +11,7 @@ import re
 import sys
 import Assembly
 import data
+import paint
 from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory, replace_memory_byte
 from Branch import check_branch, memory_branch
 import Create_memory
@@ -52,29 +53,45 @@ class Ui_MainWindow(object):
         self.tabWidget.setObjectName("tabWidget")
         self.tab_1 = QtWidgets.QWidget()
         self.tab_1.setObjectName("tab_1")
-        self.SimulateButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.SimulateButton.setGeometry(QtCore.QRect(10, 20, 111, 51))
-        self.SimulateButton.setObjectName("SimulateButton")
+        self.CompileButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.CompileButton.setGeometry(QtCore.QRect(270, 20, 111, 51))
+        self.CompileButton.setObjectName("CompileButton")
         self.RestarButton = QtWidgets.QPushButton(parent=self.tab_1)
         self.RestarButton.setGeometry(QtCore.QRect(140, 20, 111, 51))
         self.RestarButton.setObjectName("RestarButton")
-        self.BreakPointButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.BreakPointButton.setGeometry(QtCore.QRect(10, 80, 111, 51))
-        self.BreakPointButton.setObjectName("BreakPointButton")
         self.StepButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.StepButton.setGeometry(QtCore.QRect(270, 20, 111, 51))
+        self.StepButton.setGeometry(QtCore.QRect(10, 20, 111, 51))
         self.StepButton.setObjectName("StepButton")
         self.ImportButton = QtWidgets.QPushButton(parent=self.tab_1)
         self.ImportButton.setGeometry(QtCore.QRect(140, 80, 111, 51))
         self.ImportButton.setObjectName("ImportButton")
         self.ExportButton = QtWidgets.QPushButton(parent=self.tab_1)
-        self.ExportButton.setGeometry(QtCore.QRect(270, 80, 111, 51))
+        self.ExportButton.setGeometry(QtCore.QRect(10, 80, 111, 51))
         self.ExportButton.setObjectName("ExportButton")
-        self.CodeEditText = QtWidgets.QTextEdit(parent=self.tab_1)
-        self.CodeEditText.setGeometry(QtCore.QRect(410, 10, 591, 721))
+        self.RunButton = QtWidgets.QPushButton(parent=self.tab_1)
+        self.RunButton.setGeometry(QtCore.QRect(270, 80, 111, 51))
+        self.RunButton.setObjectName("RunButton")
+        self.stackedCodeWidget = QtWidgets.QStackedWidget(parent=self.tab_1)
+        self.stackedCodeWidget.setGeometry(QtCore.QRect(400, 0, 611, 751))
+        self.stackedCodeWidget.setObjectName("stackedCodeWidget")
+        self.pageCode_1 = QtWidgets.QWidget()
+        self.pageCode_1.setObjectName("pageCode_1")
+        self.CodeEditText = QtWidgets.QTextEdit(parent=self.pageCode_1)
+        self.CodeEditText.setGeometry(QtCore.QRect(10, 20, 591, 711))
         self.CodeEditText.setObjectName("CodeEditText")
+        self.stackedCodeWidget.addWidget(self.pageCode_1)
+        self.pageCode_2 = QtWidgets.QWidget()
+        self.pageCode_2.setObjectName("pageCode_2")
+        self.CodeView = QtWidgets.QTableView(parent=self.pageCode_2)
+        self.CodeView.setGeometry(QtCore.QRect(10, 20, 591, 711))
+        self.CodeView.setObjectName("CodeView")
+        self.CodeView.setShowGrid(False)
+        self.CodeView.setGridStyle(QtCore.Qt.PenStyle.NoPen)
+        self.CodeView.verticalHeader().setVisible(False)
+        self.stackedCodeWidget.addWidget(self.pageCode_2)
         
-        self.SimulateButton.clicked.connect(self.Check)
+        self.CompileButton.clicked.connect(self.show_code_view)
+        self.RunButton.clicked.connect(self.Check)
         self.RestarButton.clicked.connect(self.Restart)
         self.StepButton.clicked.connect(self.check_next_line)
         self.ImportButton.clicked.connect(self.import_file)
@@ -372,6 +389,8 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
+        self.model_code = QtGui.QStandardItemModel(0, 2)
+        
         self.model = QtGui.QStandardItemModel(0, 2)
         self.Addrr_Mem_View_Word.setModel(self.model)
         self.Addrr_Mem_View_Word.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
@@ -394,22 +413,27 @@ class Ui_MainWindow(object):
         self.load_items_byte()
         self.Addrr_Mem_View_Byte.verticalScrollBar().valueChanged.connect(self.on_scroll_byte)
         self.GotoAddr_byte.clicked.connect(self.search_memory_byte)
+        
+        delegate = paint.CustomCheckBoxDelegate(self.CodeView)
+        self.CodeView.setItemDelegateForColumn(0, delegate)
 
     def load_items(self):
-        data = []
         for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
             item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
+            item1.setFlags(item1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
             item2 = QtGui.QStandardItem('0x' + "aaaaaaaa")
+            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
             self.model.appendRow([item1, item2])
         self.Addrr_Mem_View_Word.setColumnWidth(0, 150)
         self.Addrr_Mem_View_Word.setColumnWidth(1, 150)
         self.current_index += self.items_per_batch
         
     def load_items_byte(self):
-        data = []
         for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch, self.total_items)):
             item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
+            item1.setFlags(item1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
             item2 = QtGui.QStandardItem('0xaa' + " " + '0xaa' + " " + '0xaa' + " " + '0xaa')
+            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
             self.model_byte.appendRow([item1, item2])
         self.Addrr_Mem_View_Byte.setColumnWidth(0, 150)
         self.Addrr_Mem_View_Byte.setColumnWidth(1, 150)
@@ -480,6 +504,40 @@ class Ui_MainWindow(object):
 
     def show_byte_memory(self):
         self.stackedWidget.setCurrentIndex(1)
+        
+    def show_code_edit(self):
+        self.stackedCodeWidget.setCurrentIndex(0)
+
+    def show_code_view(self):
+        text = self.CodeEditText.toPlainText()
+        if not text:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
+            return
+        lines = text.split("\n")
+        lines, _ = data.parse_data(lines)
+        lines = [item for item in lines if item not in [" ", None]]
+        lines = [' '.join(item.split()) for item in lines if item.strip()]
+        print(lines)
+        self.CodeView.setModel(self.model_code)
+        self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
+        for line in lines:
+            if not line.endswith(':'):
+                item1 = QtGui.QStandardItem()
+                item1.setCheckable(True)
+                item1.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                item2 = QtGui.QStandardItem("  " + line)
+            if line.endswith(':'):
+                item1 = QtGui.QStandardItem(line.upper())
+                item2 = QtGui.QStandardItem(" ")
+            item1.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
+            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_code.appendRow([item1, item2])
+        self.CodeView.setColumnWidth(0, 100)
+        self.CodeView.setColumnWidth(1, 472)
+        item = self.model_code.item(0, 1)
+        item.setBackground(QtGui.QColor("Yellow"))
+        self.stackedCodeWidget.setCurrentIndex(1)
                     
     def reset_backgroud_register(self):
         self.r0_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
@@ -506,10 +564,10 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.SimulateButton.setText(_translate("MainWindow", "Simulate"))
+        self.CompileButton.setText(_translate("MainWindow", "Compile"))
         self.RestarButton.setText(_translate("MainWindow", "Restart"))
         self.StepButton.setText(_translate("MainWindow", "Step"))
-        self.BreakPointButton.setText(_translate("MainWindow", "BreakPoint"))
+        self.RunButton.setText(_translate("MainWindow", "Run"))
         self.r0_Label.setText(_translate("MainWindow", "r0"))
         self.r0_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
         self.r0_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
@@ -593,9 +651,13 @@ class Ui_MainWindow(object):
     pc = 0
     instruction_size = 4
     address = []
+    current_line_index = 0
+    row = []
     
     def Check(self):
-        self.message_box = QtWidgets.QMessageBox(self.tab_1)
+        if self.stackedCodeWidget.currentIndex() == 0:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
+            return
         global pc
         memory = []
         text = self.CodeEditText.toPlainText()
@@ -629,29 +691,36 @@ class Ui_MainWindow(object):
         replace_memory(self.model, self.address, memory)
         replace_memory_byte(self.model_byte, self.address, memory)
         mapping = {key: value for key, value in zip(self.address, lines)}
-        i = 0
-        while i < len(lines):
+        self.current_line_index = 0
+        while self.current_line_index < len(lines):
             self.reset_backgroud_register()
-            pc_binary = self.address[i]
+            self.reset_highlight()
+            pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
-            line = mapping.get(self.address[i])
+            line = mapping.get(self.address[self.current_line_index])
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model, self.model_byte)
-                i += 1
+                self.current_line_index += 1
             elif not line.strip():
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
                 break
             
             if label in labels:
                 position = lines.index(labels[label][0])
-                i = position
+                self.current_line_index = position
             elif label in lines:
                 position = lines.index(label)
-                i = position
+                self.current_line_index = position
             elif label != None:
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " trong chương trình")
                 break
+            
+            next_line = mapping.get(self.address[self.current_line_index])
+            if self.current_line_index >= len(lines):
+                self.reset_highlight()
+            else:
+                self.highlight_next_line(next_line)
             
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
@@ -670,7 +739,7 @@ class Ui_MainWindow(object):
                 result_str_2 = '0x' + format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
                 line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments is None and (flag_T or i == len(self.address)):
+            elif arguments is None and (flag_T or self.current_line_index == len(self.address)):
                 pass
             elif flag_B:
                 pass
@@ -696,35 +765,42 @@ class Ui_MainWindow(object):
                 c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-                       
-    current_line_index = 0
+                    
     memory_current_line = []
     data_labels = []
     def reset_highlight(self):
-        cursor = self.CodeEditText.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
-        while cursor.movePosition(QtGui.QTextCursor.MoveOperation.Down, QtGui.QTextCursor.MoveMode.KeepAnchor):
-            format = QtGui.QTextCharFormat()
-            format.setBackground(QtGui.QColor("white"))
-            cursor.setCharFormat(format)
-        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
-        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End, QtGui.QTextCursor.MoveMode.KeepAnchor)
-        format = QtGui.QTextCharFormat()
-        format.setBackground(QtGui.QColor("white"))
-        cursor.setCharFormat(format)
-    def highlight_next_line(self):
+        for row in range(self.model_code.rowCount()):
+            for column in range(self.model_code.columnCount()):
+                item = self.model_code.item(row, column)
+                if item != None:
+                    item.setBackground(QtGui.QColor("white"))
+    def highlight_next_line(self, line):
         self.reset_highlight()
-        cursor = self.CodeEditText.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.MoveOperation.Start)
-        for _ in range(self.current_line_index):
-            cursor.movePosition(QtGui.QTextCursor.MoveOperation.Down)
-        cursor.select(QtGui.QTextCursor.SelectionType.LineUnderCursor)
-        format = QtGui.QTextCharFormat()
-        format.setBackground(QtGui.QColor("yellow"))
-        cursor.setCharFormat(format)
+        row_count = self.model_code.rowCount()
+        text = self.CodeEditText.toPlainText()
+        if not text:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
+            return
+        lines = text.split("\n")
+        lines, _ = data.parse_data(lines)
+        lines = [item for item in lines if item not in [" ", None]]
+        lines = [' '.join(item.split()) for item in lines if item.strip()]
+        self.row = [i for i in range(row_count)]
+        highlight = {key: value for key, value in zip(lines, self.row)}
+        if line in lines:
+            index = highlight.get(line)
+            item = self.model_code.item(index, 1)
+            item.setBackground(QtGui.QColor("Yellow"))
+            
     def check_next_line(self):
+        if self.stackedCodeWidget.currentIndex() == 0:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
+            return
         global current_line_index
-        text = self.CodeEditText.toPlainText()    
+        text = self.CodeEditText.toPlainText()
+        if not text:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
+            return
         lines = text.split("\n")
         lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
@@ -757,7 +833,6 @@ class Ui_MainWindow(object):
         if self.current_line_index < len(lines):
             self.reset_backgroud_register()
             self.reset_highlight()
-            self.highlight_next_line()
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
             current_line = lines[self.current_line_index]
@@ -775,6 +850,12 @@ class Ui_MainWindow(object):
             elif label != None:
                 position = lines.index(label)
                 self.current_line_index = position
+                
+            next_line = mapping.get(self.address[self.current_line_index])
+            if self.current_line_index >= len(lines):
+                self.reset_highlight()
+            else:
+                self.highlight_next_line(next_line)
 
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
@@ -823,6 +904,7 @@ class Ui_MainWindow(object):
     def Restart(self):
         self.address = []
         self.memory_current_line = []
+        self.show_code_edit()
         self.reset_search_memory()
         self.reset_backgroud_register()
         self.reset_highlight()
@@ -860,6 +942,7 @@ class Ui_MainWindow(object):
         self.load_items_byte()
         self.Address_search_LineEdit_byte.setText('0x' + format(0, '08x'))
         self.Addrr_Mem_View_Byte.scrollToTop()
+        self.row = []
         
     def export(self):
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save File", "", "Text Files (*.txt);;Assembly Files (*.s)")
