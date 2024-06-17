@@ -514,10 +514,34 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
             return
         lines = text.split("\n")
-        lines, _ = data.parse_data(lines)
+        lines, data_lines = data.parse_data(lines)
+        labels, lines_clean = parse_labels(lines)
         lines = [item for item in lines if item not in [" ", None]]
         lines = [' '.join(item.split()) for item in lines if item.strip()]
-        print(lines)
+        lines_clean = [item for item in lines_clean if item not in [" ", None]]
+        lines_clean = [' '.join(item.split()) for item in lines_clean if item.strip()]
+        for index, line in enumerate(lines_clean, start=1):
+            pc_binary = '0x' + format(self.pc, '08x')
+            self.address.append(pc_binary)
+            self.pc += self.instruction_size
+        self.data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
+        if data_address:
+            self.address.extend(data_address)
+        for index, line in enumerate(lines_clean, start=1):
+            memory_line = Create_memory.check_memory(self, line, self.address, lines_clean, self.data_labels)
+            if memory_line:
+                int_memory_line = Decoder(memory_line)
+                memory_line = '0x' + format(int_memory_line, '08x')
+                self.memory_current_line.append(memory_line)
+            memory_line_branch = memory_branch(self, line, lines_clean, self.address, labels)
+            if memory_line_branch:
+                int_memory_line_branch = Decoder(memory_line_branch)
+                memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
+                self.memory_current_line.append(memory_line_branch)
+        if data_memory:
+            self.memory_current_line.extend(data_memory)        
+        replace_memory(self.model, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
         self.CodeView.setModel(self.model_code)
         self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
@@ -538,6 +562,15 @@ class Ui_MainWindow(object):
         item = self.model_code.item(0, 1)
         item.setBackground(QtGui.QColor("Yellow"))
         self.stackedCodeWidget.setCurrentIndex(1)
+    
+    bkpt = []
+    def Code_BreakPoint(self):
+        for row in range(self.model_code.rowCount()):
+            item_checkbox = self.model_code.item(row, 0)  # First column
+            item_line = self.model_code.item(row, 1)      # Second column
+            if item_checkbox.isCheckable() and item_checkbox.checkState() == QtCore.Qt.CheckState.Checked:
+                line = item_line.text().strip()
+                self.bkpt.append(line)
                     
     def reset_backgroud_register(self):
         self.r0_LineEdit.setStyleSheet("background-color: white; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
@@ -668,44 +701,24 @@ class Ui_MainWindow(object):
         lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
         lines = [item for item in lines if item not in ["", None]]
-        for index, line in enumerate(lines, start=1):
-            pc_binary = '0x' + format(self.pc, '08x')
-            self.address.append(pc_binary)
-            self.pc += self.instruction_size
-        data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
-        if data_address:
-            self.address.extend(data_address)
-        for index, line in enumerate(lines, start=1):
-            memory_line = Create_memory.check_memory(self, line, self.address, lines, data_labels)
-            if memory_line:
-                int_memory_line = Decoder(memory_line)
-                memory_line = '0x' + format(int_memory_line, '08x')
-                memory.append(memory_line)
-            memory_line_branch = memory_branch(self, line, lines, self.address, labels)
-            if memory_line_branch:
-                int_memory_line_branch = Decoder(memory_line_branch)
-                memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
-                memory.append(memory_line_branch)
-        if data_memory:
-            memory.extend(data_memory)
-        replace_memory(self.model, self.address, memory)
-        replace_memory_byte(self.model_byte, self.address, memory)
+        lines = [' '.join(item.split()) for item in lines if item.strip()]
         mapping = {key: value for key, value in zip(self.address, lines)}
-        self.current_line_index = 0
+        self.Code_BreakPoint()
         while self.current_line_index < len(lines):
+            line = mapping.get(self.address[self.current_line_index])
+            if line.strip() in self.bkpt:
+                break
             self.reset_backgroud_register()
             self.reset_highlight()
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
-            line = mapping.get(self.address[self.current_line_index])
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, memory, data_labels, self.model, self.model_byte)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
                 self.current_line_index += 1
             elif not line.strip():
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
                 break
-            
             if label in labels:
                 position = lines.index(labels[label][0])
                 self.current_line_index = position
@@ -715,13 +728,11 @@ class Ui_MainWindow(object):
             elif label != None:
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " trong chương trình")
                 break
-            
             next_line = mapping.get(self.address[self.current_line_index])
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
             else:
                 self.highlight_next_line(next_line)
-            
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
                 result_int = int(arguments[0], 2)
@@ -746,17 +757,14 @@ class Ui_MainWindow(object):
             elif arguments is None:
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + line + "]"+ " không hợp lệ")
                 break
-                
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")
             v_edit = conditon_dict.get("v")
-
             n_edit.setText(flag_N)
             z_edit.setText(flag_Z)
             c_edit.setText(flag_C)
             v_edit.setText(flag_V)
-            
             if flag_N == '1':
                 n_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_Z == '1':
@@ -805,30 +813,6 @@ class Ui_MainWindow(object):
         lines, data_lines = data.parse_data(lines)
         labels, lines = parse_labels(lines)
         lines = [item for item in lines if item not in ["", None]]
-        if self.current_line_index == 0:
-            address_index = 0
-            for index, line in enumerate(lines, start=1):
-                pc_binary = '0x' + format(address_index, '08x')
-                self.address.append(pc_binary)
-                address_index += self.instruction_size
-            self.data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
-            if data_address:
-                self.address.extend(data_address)
-            for index, line in enumerate(lines, start=1):
-                memory_line = Create_memory.check_memory(self, line, self.address, lines, self.data_labels)
-                if memory_line:
-                    int_memory_line = Decoder(memory_line)
-                    memory_line = '0x' + format(int_memory_line, '08x')
-                    self.memory_current_line.append(memory_line)
-                memory_line_branch = memory_branch(self, line, lines, self.address, labels)
-                if memory_line_branch:
-                    int_memory_line_branch = Decoder(memory_line_branch)
-                    memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
-                    self.memory_current_line.append(memory_line_branch)
-            if data_memory:
-                self.memory_current_line.extend(data_memory)        
-            replace_memory(self.model, self.address, self.memory_current_line)
-            replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
         mapping = {key: value for key, value in zip(self.address, lines)}
         if self.current_line_index < len(lines):
             self.reset_backgroud_register()
@@ -840,23 +824,17 @@ class Ui_MainWindow(object):
                 label, flag_B = check_branch(self, current_line, self.address, lines)
                 reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
                 self.current_line_index += 1
-            elif not line.strip():
-                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
-                pass
-            
             if label in labels:
                 position = lines.index(labels[label][0])
                 self.current_line_index = position
             elif label != None:
                 position = lines.index(label)
                 self.current_line_index = position
-                
             next_line = mapping.get(self.address[self.current_line_index])
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
             else:
                 self.highlight_next_line(next_line)
-
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
                 result_int = int(arguments[0], 2)
@@ -881,17 +859,14 @@ class Ui_MainWindow(object):
             elif arguments is None or flag_B == None:
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + current_line + "]"+ " không hợp lệ")
                 return
-                    
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")
             v_edit = conditon_dict.get("v")
-
             n_edit.setText(flag_N)
             z_edit.setText(flag_Z)
             c_edit.setText(flag_C)
             v_edit.setText(flag_V)
-            
             if flag_N == '1':
                 n_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_Z == '1':
@@ -943,6 +918,7 @@ class Ui_MainWindow(object):
         self.Address_search_LineEdit_byte.setText('0x' + format(0, '08x'))
         self.Addrr_Mem_View_Byte.scrollToTop()
         self.row = []
+        self.bkpt = []
         
     def export(self):
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save File", "", "Text Files (*.txt);;Assembly Files (*.s)")
