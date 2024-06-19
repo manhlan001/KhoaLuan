@@ -728,10 +728,10 @@ class Ui_MainWindow(object):
             elif label != None:
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " trong chương trình")
                 break
-            next_line = mapping.get(self.address[self.current_line_index])
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
             else:
+                next_line = mapping.get(self.address[self.current_line_index])
                 self.highlight_next_line(next_line)
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
@@ -830,10 +830,10 @@ class Ui_MainWindow(object):
             elif label != None:
                 position = lines.index(label)
                 self.current_line_index = position
-            next_line = mapping.get(self.address[self.current_line_index])
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
             else:
+                next_line = mapping.get(self.address[self.current_line_index])
                 self.highlight_next_line(next_line)
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
