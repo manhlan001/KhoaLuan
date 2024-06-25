@@ -9,7 +9,7 @@ VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR)", re.IGNORECASE)
-VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS)", re.IGNORECASE)
+VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -479,8 +479,9 @@ def check_memory(self, line, address, lines, data_labels):
             instruction = instruction.lstrip(match_flag.group(0))
             flag = "1"
         if not instruction:
+            print(mem)
             if l == 1 and len(mem) == 3:
-                reg.append(mem[0])
+                reg_memory.append(mem[0])
                 mem = mem[1:]
             for i in range(len(mem)):
                 item = mem[i]
@@ -488,13 +489,25 @@ def check_memory(self, line, address, lines, data_labels):
                     reg_memory.append(item)
                 else:
                     return memory
-                
-            if u != None and l == 1:
-                RdLo = dict.register_memory_dict.get(reg)  
-                RdHi = dict.register_memory_dict.get(reg_memory[0])
-                Rm = dict.register_memory_dict.get(reg_memory[1])
-                Rs = dict.register_memory_dict.get(reg_memory[2])
-                memory = condition_memory + "00001" + u + A + flag + RdLo + RdHi + Rs + "1001" + Rm
+            condition_memory = dict.condition_memory_dict.get(condition)    
+            if u != None and (l == 1 or instruction_clean.lower() == "div"):
+                if instruction_clean.lower() == "div":
+                    A = "0"
+                    Rd = dict.register_memory_dict.get(reg)    
+                    Rn = "0000"
+                    Rm = dict.register_memory_dict.get(reg_memory[0])
+                    Rs = dict.register_memory_dict.get(reg_memory[1])
+                    memory = condition_memory + "00001" + u + A + flag + Rd + Rn + Rs + "1001" + Rm
+                else:
+                    RdLo = dict.register_memory_dict.get(reg)  
+                    RdHi = dict.register_memory_dict.get(reg_memory[0])
+                    Rm = dict.register_memory_dict.get(reg_memory[1])
+                    Rs = dict.register_memory_dict.get(reg_memory[2])
+                    if instruction_clean.lower() == "mla" or instruction_clean.lower() == "mls":
+                        A = "1"
+                    else:
+                        A = "0"
+                    memory = condition_memory + "00001" + u + A + flag + RdLo + RdHi + Rs + "1001" + Rm
             else:
                 Rd = dict.register_memory_dict.get(reg)    
                 Rn = "0000"
@@ -507,7 +520,6 @@ def check_memory(self, line, address, lines, data_labels):
                     A = "0"
                     Rm = dict.register_memory_dict.get(reg_memory[0])
                     Rs = dict.register_memory_dict.get(reg_memory[1])
-                condition_memory = dict.condition_memory_dict.get(condition)
                 memory = condition_memory + "000000" + A + flag + Rd + Rn + Rs + "1001" + Rm
         else:
             return memory

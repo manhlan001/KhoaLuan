@@ -8,8 +8,8 @@ import ctypes
 from encoder import Encoder
 from decoder import Decoder
 
-VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
-VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
+VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|EOR|ADD|ADC|SUB|SBC|RSB|RSC)", re.IGNORECASE)
+VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(MOV|MVN|AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB = re.compile(r"(ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
@@ -600,7 +600,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_b
                 flag_N = result[0]
                 if Decoder(result) == 0: flag_Z = '1'
             
-            if u != None and l == 1:    
+            if u != None and (l == 1 or instruction_clean.lower() == "div"):    
                 arguments = Check_Command_Long(temporary, instruction_clean, u, reg, line)
             elif u == None and l == None:
                 arguments = Check_Command(temporary, instruction_clean, line)
@@ -668,6 +668,8 @@ def Check_Command(temporary, instruction, line):
         arguments, _, _ = SBC(temporary, line)
     elif(instruction.lower() == "rsb"):
         arguments, _, _ = RSB(temporary, line)
+    elif(instruction.lower() == "rsc"):
+        arguments, _, _ = RSB(temporary, line)
     elif(instruction.lower() == "mul"):
         arguments = dict.mul_32(temporary, line)
     elif(instruction.lower() == "mla"):
@@ -703,6 +705,9 @@ def Check_Command_With_Flag(temporary, instruction, line):
     elif(instruction.lower() == "rsb"):
         arguments, carry, overflow = RSB(temporary, line)
         return arguments, carry, overflow
+    elif(instruction.lower() == "rsc"):
+        arguments, carry, overflow = RSC(temporary, line)
+        return arguments, carry, overflow
     elif (instruction.lower() == "cmp"):
         arguments, carry, overflow = dict.sub_32(temporary, line)
         return arguments, carry, overflow
@@ -731,6 +736,10 @@ def Check_Command_Long(temporary, instruction, u, reg, line):
         arguments = UMLS(temporary, reg, line)
     elif(instruction.lower() == "mls") and u == 1:
         arguments = SMLS(temporary, reg, line)
+    if(instruction.lower() == "div") and u == 0:
+        arguments = dict.divide_32_unsigned(temporary, line)
+    elif(instruction.lower() == "div") and u == 1:
+        arguments = dict.divide_32_signed(temporary, line)
     return arguments
 
 def MOV(temporary, line):
@@ -871,6 +880,25 @@ def RSB(temporary, line):
     temporary[0] = temporary[1]
     temporary[1] = t
     arguments, carry, overflow = dict.sub_32(temporary, line)
+    return arguments, carry, overflow
+
+def RSC(temporary, line):
+    t = []
+    carry_in = conditon_dict.get("c")
+    carry_in = carry_in.text()
+    carry_int = int(carry_in)
+    if carry_int == 0:
+        carry_int = 1
+    elif carry_int == 1:
+        carry_int = 0
+    c = Encoder(carry_int)
+    temp = temporary[0] 
+    temporary[0] = temporary[1]
+    temporary[1] = temp
+    result, _, _ = dict.sub_32(temporary, line)
+    t.append(result[0])
+    t.append(c)
+    arguments, carry, overflow = dict.sub_32(t, line)
     return arguments, carry, overflow
 
 def MLA(temporary, line):

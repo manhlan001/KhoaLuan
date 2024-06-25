@@ -72,18 +72,18 @@ class Ui_MainWindow(object):
         self.RunButton.setGeometry(QtCore.QRect(270, 70, 111, 51))
         self.RunButton.setObjectName("RunButton")
         self.stackedCodeWidget = QtWidgets.QStackedWidget(parent=self.tab_1)
-        self.stackedCodeWidget.setGeometry(QtCore.QRect(400, 0, 611, 601))
+        self.stackedCodeWidget.setGeometry(QtCore.QRect(400, 0, 631, 601))
         self.stackedCodeWidget.setObjectName("stackedCodeWidget")
         self.pageCode_1 = QtWidgets.QWidget()
         self.pageCode_1.setObjectName("pageCode_1")
         self.CodeEditText = QtWidgets.QTextEdit(parent=self.pageCode_1)
-        self.CodeEditText.setGeometry(QtCore.QRect(10, 20, 591, 571))
+        self.CodeEditText.setGeometry(QtCore.QRect(10, 20, 611, 571))
         self.CodeEditText.setObjectName("CodeEditText")
         self.stackedCodeWidget.addWidget(self.pageCode_1)
         self.pageCode_2 = QtWidgets.QWidget()
         self.pageCode_2.setObjectName("pageCode_2")
         self.CodeView = QtWidgets.QTableView(parent=self.pageCode_2)
-        self.CodeView.setGeometry(QtCore.QRect(10, 20, 591, 571))
+        self.CodeView.setGeometry(QtCore.QRect(10, 20, 611, 571))
         self.CodeView.setObjectName("CodeView")
         self.CodeView.setShowGrid(False)
         self.CodeView.setGridStyle(QtCore.Qt.PenStyle.NoPen)
@@ -298,15 +298,15 @@ class Ui_MainWindow(object):
         self.tab_memory = QtWidgets.QWidget()
         self.tab_memory.setObjectName("tab_memory")
         self.stackedWidget = QtWidgets.QStackedWidget(parent=self.tab_memory)
-        self.stackedWidget.setGeometry(QtCore.QRect(290, 20, 361, 721))
+        self.stackedWidget.setGeometry(QtCore.QRect(0, 0, 891, 601))
         self.stackedWidget.setObjectName("stackedWidget")
         self.page_word = QtWidgets.QWidget()
         self.page_word.setObjectName("page_word")
         self.Addrr_Mem_View_Word = QtWidgets.QTreeView(parent=self.page_word)
-        self.Addrr_Mem_View_Word.setGeometry(QtCore.QRect(20, 40, 321, 671))
+        self.Addrr_Mem_View_Word.setGeometry(QtCore.QRect(10, 50, 871, 541))
         self.Addrr_Mem_View_Word.setObjectName("Addrr_Mem_View_Word")
         self.formLayoutWidget_5 = QtWidgets.QWidget(parent=self.page_word)
-        self.formLayoutWidget_5.setGeometry(QtCore.QRect(50, 0, 251, 29))
+        self.formLayoutWidget_5.setGeometry(QtCore.QRect(10, 10, 251, 29))
         self.formLayoutWidget_5.setObjectName("formLayoutWidget_5")
         self.formLayout_4 = QtWidgets.QFormLayout(self.formLayoutWidget_5)
         self.formLayout_4.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
@@ -332,10 +332,10 @@ class Ui_MainWindow(object):
         self.page_byte = QtWidgets.QWidget()
         self.page_byte.setObjectName("page_byte")
         self.Addrr_Mem_View_Byte = QtWidgets.QTreeView(parent=self.page_byte)
-        self.Addrr_Mem_View_Byte.setGeometry(QtCore.QRect(20, 40, 321, 671))
+        self.Addrr_Mem_View_Byte.setGeometry(QtCore.QRect(10, 50, 871, 541))
         self.Addrr_Mem_View_Byte.setObjectName("Addrr_Mem_View_Byte")
         self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.page_byte)
-        self.formLayoutWidget_3.setGeometry(QtCore.QRect(50, 0, 251, 29))
+        self.formLayoutWidget_3.setGeometry(QtCore.QRect(10, 10, 251, 29))
         self.formLayoutWidget_3.setObjectName("formLayoutWidget_3")
         self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_3)
         self.formLayout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
@@ -359,10 +359,10 @@ class Ui_MainWindow(object):
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr_byte)
         self.stackedWidget.addWidget(self.page_byte)
         self.groupBox = QtWidgets.QGroupBox(parent=self.tab_memory)
-        self.groupBox.setGeometry(QtCore.QRect(10, 60, 271, 111))
+        self.groupBox.setGeometry(QtCore.QRect(900, 0, 131, 591))
         self.groupBox.setObjectName("groupBox")
         self.SizeWordButton = QtWidgets.QPushButton(parent=self.groupBox)
-        self.SizeWordButton.setGeometry(QtCore.QRect(30, 60, 91, 31))
+        self.SizeWordButton.setGeometry(QtCore.QRect(20, 60, 91, 31))
         self.SizeWordButton.setObjectName("SizeWordButton")
         self.label_size_memory = QtWidgets.QLabel(parent=self.groupBox)
         self.label_size_memory.setGeometry(QtCore.QRect(10, 30, 111, 31))
@@ -370,12 +370,25 @@ class Ui_MainWindow(object):
         self.label_size_memory.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
         self.label_size_memory.setObjectName("label_size_memory")
         self.SizeByteButton = QtWidgets.QPushButton(parent=self.groupBox)
-        self.SizeByteButton.setGeometry(QtCore.QRect(150, 60, 91, 31))
+        self.SizeByteButton.setGeometry(QtCore.QRect(20, 100, 91, 31))
         self.SizeByteButton.setObjectName("SizeByteButton")
-        self.label_2 = QtWidgets.QLabel(parent=self.groupBox)
-        self.label_2.setGeometry(QtCore.QRect(10, 110, 47, 13))
-        self.label_2.setText("")
-        self.label_2.setObjectName("label_2")
+        self.label_memory_words_per_row = QtWidgets.QLabel(parent=self.groupBox)
+        self.label_memory_words_per_row.setGeometry(QtCore.QRect(10, 150, 121, 41))
+        self.label_memory_words_per_row.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_memory_words_per_row.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.label_memory_words_per_row.setObjectName("label_memory_words_per_row")
+        self.x8_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
+        self.x8_memory_words_per_row.setGeometry(QtCore.QRect(20, 200, 91, 31))
+        self.x8_memory_words_per_row.setObjectName("x8_memory_words_per_row")
+        self.x4_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
+        self.x4_memory_words_per_row.setGeometry(QtCore.QRect(20, 240, 91, 31))
+        self.x4_memory_words_per_row.setObjectName("x4_memory_words_per_row")
+        self.x2_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
+        self.x2_memory_words_per_row.setGeometry(QtCore.QRect(20, 280, 91, 31))
+        self.x2_memory_words_per_row.setObjectName("x2_memory_words_per_row")
+        self.x1_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
+        self.x1_memory_words_per_row.setGeometry(QtCore.QRect(20, 320, 91, 31))
+        self.x1_memory_words_per_row.setObjectName("x1_memory_words_per_row")
         self.tabWidget.addTab(self.tab_memory, "")
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
@@ -390,6 +403,9 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
         self.model_code = QtGui.QStandardItemModel(0, 2)
+        self.CodeView.setModel(self.model_code)
+        self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
         
         self.model = QtGui.QStandardItemModel(0, 2)
         self.Addrr_Mem_View_Word.setModel(self.model)
@@ -508,10 +524,13 @@ class Ui_MainWindow(object):
     def show_code_edit(self):
         self.stackedCodeWidget.setCurrentIndex(0)
 
+    have_compile = False
     def show_code_view(self):
         text = self.CodeEditText.toPlainText()
         if not text:
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
+            return
+        if self.have_compile:
             return
         lines = text.split("\n")
         lines, data_lines = data.parse_data(lines)
@@ -542,9 +561,6 @@ class Ui_MainWindow(object):
             self.memory_current_line.extend(data_memory)        
         replace_memory(self.model, self.address, self.memory_current_line)
         replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
-        self.CodeView.setModel(self.model_code)
-        self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
         for line in lines:
             if not line.endswith(':'):
                 item1 = QtGui.QStandardItem()
@@ -562,6 +578,7 @@ class Ui_MainWindow(object):
         item = self.model_code.item(0, 1)
         item.setBackground(QtGui.QColor("Yellow"))
         self.stackedCodeWidget.setCurrentIndex(1)
+        self.have_compile = True
     
     bkpt = []
     def Code_BreakPoint(self):
@@ -679,6 +696,12 @@ class Ui_MainWindow(object):
         self.SizeWordButton.setText(_translate("MainWindow", "Word"))
         self.label_size_memory.setText(_translate("MainWindow", "Size Memory:"))
         self.SizeByteButton.setText(_translate("MainWindow", "Byte"))
+        self.label_memory_words_per_row.setText(_translate("MainWindow", "Memory words\n"
+"per row:"))
+        self.x8_memory_words_per_row.setText(_translate("MainWindow", "8"))
+        self.x4_memory_words_per_row.setText(_translate("MainWindow", "4"))
+        self.x2_memory_words_per_row.setText(_translate("MainWindow", "2"))
+        self.x1_memory_words_per_row.setText(_translate("MainWindow", "1"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
     pc = 0
@@ -919,6 +942,9 @@ class Ui_MainWindow(object):
         self.Addrr_Mem_View_Byte.scrollToTop()
         self.row = []
         self.bkpt = []
+        self.have_compile = False
+        self.model_code.clear()
+        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
         
     def export(self):
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save File", "", "Text Files (*.txt);;Assembly Files (*.s)")
