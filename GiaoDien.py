@@ -297,15 +297,32 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_1, "")
         self.tab_memory = QtWidgets.QWidget()
         self.tab_memory.setObjectName("tab_memory")
-        self.stackedWidget = QtWidgets.QStackedWidget(parent=self.tab_memory)
-        self.stackedWidget.setGeometry(QtCore.QRect(0, 0, 891, 601))
-        self.stackedWidget.setObjectName("stackedWidget")
-        self.page_word = QtWidgets.QWidget()
-        self.page_word.setObjectName("page_word")
-        self.Addrr_Mem_View_Word = QtWidgets.QTreeView(parent=self.page_word)
-        self.Addrr_Mem_View_Word.setGeometry(QtCore.QRect(10, 50, 871, 541))
-        self.Addrr_Mem_View_Word.setObjectName("Addrr_Mem_View_Word")
-        self.formLayoutWidget_5 = QtWidgets.QWidget(parent=self.page_word)
+        self.groupBox = QtWidgets.QGroupBox(parent=self.tab_memory)
+        self.groupBox.setGeometry(QtCore.QRect(940, 0, 91, 591))
+        self.groupBox.setObjectName("groupBox")
+        self.label_size_memory = QtWidgets.QLabel(parent=self.groupBox)
+        self.label_size_memory.setGeometry(QtCore.QRect(0, 30, 81, 41))
+        self.label_size_memory.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_size_memory.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.label_size_memory.setObjectName("label_size_memory")
+        self.label_memory_words_per_row = QtWidgets.QLabel(parent=self.groupBox)
+        self.label_memory_words_per_row.setGeometry(QtCore.QRect(0, 140, 81, 61))
+        self.label_memory_words_per_row.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.label_memory_words_per_row.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.label_memory_words_per_row.setObjectName("label_memory_words_per_row")
+        self.comboBox_memory_words_per_row = QtWidgets.QComboBox(parent=self.groupBox)
+        self.comboBox_memory_words_per_row.setGeometry(QtCore.QRect(10, 210, 71, 22))
+        self.comboBox_memory_words_per_row.setObjectName("comboBox_memory_words_per_row")
+        self.comboBox_memory_words_per_row.addItem("")
+        self.comboBox_memory_words_per_row.addItem("")
+        self.comboBox_memory_words_per_row.addItem("")
+        self.comboBox_memory_words_per_row.addItem("")
+        self.comboBox_size_memory = QtWidgets.QComboBox(parent=self.groupBox)
+        self.comboBox_size_memory.setGeometry(QtCore.QRect(10, 80, 71, 25))
+        self.comboBox_size_memory.setObjectName("comboBox_size_memory")
+        self.comboBox_size_memory.addItem("")
+        self.comboBox_size_memory.addItem("")
+        self.formLayoutWidget_5 = QtWidgets.QWidget(parent=self.tab_memory)
         self.formLayoutWidget_5.setGeometry(QtCore.QRect(10, 10, 251, 29))
         self.formLayoutWidget_5.setObjectName("formLayoutWidget_5")
         self.formLayout_4 = QtWidgets.QFormLayout(self.formLayoutWidget_5)
@@ -313,90 +330,29 @@ class Ui_MainWindow(object):
         self.formLayout_4.setFormAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
         self.formLayout_4.setContentsMargins(0, 0, 0, 0)
         self.formLayout_4.setObjectName("formLayout_4")
-        self.Address_search_LineEdit_word = QtWidgets.QLineEdit(parent=self.formLayoutWidget_5)
+        self.Address_search_LineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget_5)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.Address_search_LineEdit_word.sizePolicy().hasHeightForWidth())
-        self.Address_search_LineEdit_word.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(self.Address_search_LineEdit.sizePolicy().hasHeightForWidth())
+        self.Address_search_LineEdit.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setBold(False)
         font.setWeight(50)
-        self.Address_search_LineEdit_word.setFont(font)
-        self.Address_search_LineEdit_word.setObjectName("Address_search_LineEdit_word")
-        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit_word)
-        self.GotoAddr_word = QtWidgets.QPushButton(parent=self.formLayoutWidget_5)
-        self.GotoAddr_word.setObjectName("GotoAddr_word")
-        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr_word)
-        self.stackedWidget.addWidget(self.page_word)
-        self.page_byte = QtWidgets.QWidget()
-        self.page_byte.setObjectName("page_byte")
-        self.Addrr_Mem_View_Byte = QtWidgets.QTreeView(parent=self.page_byte)
-        self.Addrr_Mem_View_Byte.setGeometry(QtCore.QRect(10, 50, 871, 541))
-        self.Addrr_Mem_View_Byte.setObjectName("Addrr_Mem_View_Byte")
-        self.formLayoutWidget_3 = QtWidgets.QWidget(parent=self.page_byte)
-        self.formLayoutWidget_3.setGeometry(QtCore.QRect(10, 10, 251, 29))
-        self.formLayoutWidget_3.setObjectName("formLayoutWidget_3")
-        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget_3)
-        self.formLayout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
-        self.formLayout.setFormAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
-        self.formLayout.setContentsMargins(0, 0, 0, 0)
-        self.formLayout.setObjectName("formLayout")
-        self.Address_search_LineEdit_byte = QtWidgets.QLineEdit(parent=self.formLayoutWidget_3)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.Address_search_LineEdit_byte.sizePolicy().hasHeightForWidth())
-        self.Address_search_LineEdit_byte.setSizePolicy(sizePolicy)
-        font = QtGui.QFont()
-        font.setBold(False)
-        font.setWeight(50)
-        self.Address_search_LineEdit_byte.setFont(font)
-        self.Address_search_LineEdit_byte.setObjectName("Address_search_LineEdit_byte")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit_byte)
-        self.GotoAddr_byte = QtWidgets.QPushButton(parent=self.formLayoutWidget_3)
-        self.GotoAddr_byte.setObjectName("GotoAddr_byte")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr_byte)
-        self.stackedWidget.addWidget(self.page_byte)
-        self.groupBox = QtWidgets.QGroupBox(parent=self.tab_memory)
-        self.groupBox.setGeometry(QtCore.QRect(900, 0, 131, 591))
-        self.groupBox.setObjectName("groupBox")
-        self.SizeWordButton = QtWidgets.QPushButton(parent=self.groupBox)
-        self.SizeWordButton.setGeometry(QtCore.QRect(20, 60, 91, 31))
-        self.SizeWordButton.setObjectName("SizeWordButton")
-        self.label_size_memory = QtWidgets.QLabel(parent=self.groupBox)
-        self.label_size_memory.setGeometry(QtCore.QRect(10, 30, 111, 31))
-        self.label_size_memory.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        self.label_size_memory.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
-        self.label_size_memory.setObjectName("label_size_memory")
-        self.SizeByteButton = QtWidgets.QPushButton(parent=self.groupBox)
-        self.SizeByteButton.setGeometry(QtCore.QRect(20, 100, 91, 31))
-        self.SizeByteButton.setObjectName("SizeByteButton")
-        self.label_memory_words_per_row = QtWidgets.QLabel(parent=self.groupBox)
-        self.label_memory_words_per_row.setGeometry(QtCore.QRect(10, 150, 121, 41))
-        self.label_memory_words_per_row.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        self.label_memory_words_per_row.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
-        self.label_memory_words_per_row.setObjectName("label_memory_words_per_row")
-        self.x8_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
-        self.x8_memory_words_per_row.setGeometry(QtCore.QRect(20, 200, 91, 31))
-        self.x8_memory_words_per_row.setObjectName("x8_memory_words_per_row")
-        self.x4_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
-        self.x4_memory_words_per_row.setGeometry(QtCore.QRect(20, 240, 91, 31))
-        self.x4_memory_words_per_row.setObjectName("x4_memory_words_per_row")
-        self.x2_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
-        self.x2_memory_words_per_row.setGeometry(QtCore.QRect(20, 280, 91, 31))
-        self.x2_memory_words_per_row.setObjectName("x2_memory_words_per_row")
-        self.x1_memory_words_per_row = QtWidgets.QPushButton(parent=self.groupBox)
-        self.x1_memory_words_per_row.setGeometry(QtCore.QRect(20, 320, 91, 31))
-        self.x1_memory_words_per_row.setObjectName("x1_memory_words_per_row")
+        self.Address_search_LineEdit.setFont(font)
+        self.Address_search_LineEdit.setObjectName("Address_search_LineEdit")
+        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.Address_search_LineEdit)
+        self.GotoAddr = QtWidgets.QPushButton(parent=self.formLayoutWidget_5)
+        self.GotoAddr.setObjectName("GotoAddr")
+        self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr)
+        self.Addrr_Mem_View = QtWidgets.QTreeView(parent=self.tab_memory)
+        self.Addrr_Mem_View.setGeometry(QtCore.QRect(10, 50, 921, 541))
+        self.Addrr_Mem_View.setObjectName("Addrr_Mem_View")
         self.tabWidget.addTab(self.tab_memory, "")
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
-        
-        self.SizeWordButton.clicked.connect(self.show_word_memory)
-        self.SizeByteButton.clicked.connect(self.show_byte_memory)
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
@@ -407,119 +363,309 @@ class Ui_MainWindow(object):
         self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
         
-        self.model = QtGui.QStandardItemModel(0, 2)
-        self.Addrr_Mem_View_Word.setModel(self.model)
-        self.Addrr_Mem_View_Word.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.model.setHorizontalHeaderLabels(["Address", "Memory"])
+        self.model = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model.appendRow([label_address, label_memory])
         
-        self.model_byte = QtGui.QStandardItemModel(0, 2)
-        self.Addrr_Mem_View_Byte.setModel(self.model_byte)
-        self.Addrr_Mem_View_Byte.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.model_byte.setHorizontalHeaderLabels(["Address", "Memory"])
+        self.model_2 = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_2.appendRow([label_address, label_memory])
+        
+        self.model_4 = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_4.appendRow([label_address, label_memory])
+        
+        self.model_8 = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_8.appendRow([label_address, label_memory])
+        
+        self.model_byte = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_byte.appendRow([label_address, label_memory])
+        
+        self.model_2_byte = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_2_byte.appendRow([label_address, label_memory])
+        
+        self.model_4_byte = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_4_byte.appendRow([label_address, label_memory])
+        
+        self.model_8_byte = QtGui.QStandardItemModel(0, 7)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_8_byte.appendRow([label_address, label_memory])
+    
+        self.Addrr_Mem_View.setColumnWidth(0, 92)
+        self.Addrr_Mem_View.setHeaderHidden(True)
+        self.Addrr_Mem_View.setFirstColumnSpanned(1, QtCore.QModelIndex(), False)
+        self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
         
         self.current_index = 0
+        self.current_index_x2 = 0
+        self.current_index_x4 = 0
+        self.current_index_x8 = 0
         self.current_index_byte = 0
+        self.current_index_x2_byte = 0
+        self.current_index_x4_byte = 0
+        self.current_index_x8_byte = 0
         self.total_items = 1073741823
         self.items_per_batch = 100
-
-        self.load_items()
-        self.Addrr_Mem_View_Word.verticalScrollBar().valueChanged.connect(self.on_scroll)
-        self.GotoAddr_word.clicked.connect(self.search_memory)
         
-        self.load_items_byte()
-        self.Addrr_Mem_View_Byte.verticalScrollBar().valueChanged.connect(self.on_scroll_byte)
-        self.GotoAddr_byte.clicked.connect(self.search_memory_byte)
+        self.load_mem_x1()
+        self.load_mem_x2()
+        self.load_mem_x4()
+        self.load_mem_x8()
+        self.load_mem_x1_byte()
+        self.load_mem_x2_byte()
+        self.load_mem_x4_byte()
+        self.load_mem_x8_byte()
+        self.check_mem_per_row_option()
         
         delegate = paint.CustomCheckBoxDelegate(self.CodeView)
         self.CodeView.setItemDelegateForColumn(0, delegate)
-
-    def load_items(self):
-        for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
-            item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
-            item1.setFlags(item1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
-            item2 = QtGui.QStandardItem('0x' + "aaaaaaaa")
-            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
-            self.model.appendRow([item1, item2])
-        self.Addrr_Mem_View_Word.setColumnWidth(0, 150)
-        self.Addrr_Mem_View_Word.setColumnWidth(1, 150)
-        self.current_index += self.items_per_batch
         
-    def load_items_byte(self):
+        self.GotoAddr.clicked.connect(self.search_memory)
+        self.comboBox_memory_words_per_row.currentIndexChanged.connect(self.check_mem_per_row_option)
+        self.comboBox_size_memory.currentIndexChanged.connect(self.check_mem_per_row_option)
+    
+    def check_mem_per_row_option(self):
+        if self.comboBox_size_memory.currentIndex() == 0:
+            if self.comboBox_memory_words_per_row.currentIndex() == 0:
+                self.Addrr_Mem_View.setModel(self.model)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 1:
+                self.Addrr_Mem_View.setModel(self.model_2)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 2:
+                self.Addrr_Mem_View.setModel(self.model_4)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 3:
+                self.Addrr_Mem_View.setModel(self.model_8)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+        if self.comboBox_size_memory.currentIndex() == 1:
+            if self.comboBox_memory_words_per_row.currentIndex() == 0:
+                self.Addrr_Mem_View.setModel(self.model_byte)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 1:
+                self.Addrr_Mem_View.setModel(self.model_2_byte)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 2:
+                self.Addrr_Mem_View.setModel(self.model_4_byte)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+            if self.comboBox_memory_words_per_row.currentIndex() == 3:
+                self.Addrr_Mem_View.setModel(self.model_8_byte)
+                self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
+    def load_mem_x1(self):
+        for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 4, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aaaaaaaa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model.appendRow([addr, mem_1])
+        self.current_index += self.items_per_batch
+    def load_mem_x1_byte(self):
         for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch, self.total_items)):
-            item1 = QtGui.QStandardItem('0x' + format(i * 4, '08x'))
-            item1.setFlags(item1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
-            item2 = QtGui.QStandardItem('0xaa' + " " + '0xaa' + " " + '0xaa' + " " + '0xaa')
-            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  
-            self.model_byte.appendRow([item1, item2])
-        self.Addrr_Mem_View_Byte.setColumnWidth(0, 150)
-        self.Addrr_Mem_View_Byte.setColumnWidth(1, 150)
+            addr = QtGui.QStandardItem(format(i * 4, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_byte.appendRow([addr, mem_1])
         self.current_index_byte += self.items_per_batch
-
+    def load_mem_x2(self):
+        for i in range(self.current_index_x2, min(self.current_index_x2 + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 8, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aaaaaaaa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aaaaaaaa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_2.appendRow([addr, mem_1, mem_2])
+        self.current_index_x2 += self.items_per_batch
+    def load_mem_x2_byte(self):
+        for i in range(self.current_index_x2_byte, min(self.current_index_x2_byte + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 8, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_2_byte.appendRow([addr, mem_1, mem_2])
+        self.current_index_x2_byte += self.items_per_batch
+    def load_mem_x4(self):
+        for i in range(self.current_index_x4, min(self.current_index_x4 + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 16, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aaaaaaaa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aaaaaaaa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_3 = QtGui.QStandardItem('aaaaaaaa')
+            mem_3.setFlags(mem_3.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_4 = QtGui.QStandardItem('aaaaaaaa')
+            mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_4.appendRow([addr, mem_1, mem_2, mem_3, mem_4])
+        self.current_index_x4 += self.items_per_batch
+    def load_mem_x4_byte(self):
+        for i in range(self.current_index_x4_byte, min(self.current_index_x4_byte + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 16, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_3 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_3.setFlags(mem_3.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_4 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_4_byte.appendRow([addr, mem_1, mem_2, mem_3, mem_4])
+        self.current_index_x4_byte += self.items_per_batch
+    def load_mem_x8(self):
+        for i in range(self.current_index_x8, min(self.current_index_x8 + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 32, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aaaaaaaa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aaaaaaaa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_3 = QtGui.QStandardItem('aaaaaaaa')
+            mem_3.setFlags(mem_3.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_4 = QtGui.QStandardItem('aaaaaaaa')
+            mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_5 = QtGui.QStandardItem('aaaaaaaa')
+            mem_5.setFlags(mem_5.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_6 = QtGui.QStandardItem('aaaaaaaa')
+            mem_6.setFlags(mem_6.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_7 = QtGui.QStandardItem('aaaaaaaa')
+            mem_7.setFlags(mem_7.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_8 = QtGui.QStandardItem('aaaaaaaa')
+            mem_8.setFlags(mem_8.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_8.appendRow([addr, mem_1, mem_2, mem_3, mem_4, mem_5, mem_6, mem_7, mem_8])
+        self.current_index_x8 += self.items_per_batch
+    def load_mem_x8_byte(self):
+        for i in range(self.current_index_x8_byte, min(self.current_index_x8_byte + self.items_per_batch, self.total_items)):
+            addr = QtGui.QStandardItem(format(i * 32, '08x'))
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setBackground(QtGui.QColor("#00FFFF"))
+            mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_3 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_3.setFlags(mem_3.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_4 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_5 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_5.setFlags(mem_5.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_6 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_6.setFlags(mem_6.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_7 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_7.setFlags(mem_7.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            mem_8 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
+            mem_8.setFlags(mem_8.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_8_byte.appendRow([addr, mem_1, mem_2, mem_3, mem_4, mem_5, mem_6, mem_7, mem_8])
+        self.current_index_x8_byte += self.items_per_batch
     def on_scroll(self, value):
-        max_scroll = self.Addrr_Mem_View_Word.verticalScrollBar().maximum()
+        max_scroll = self.Addrr_Mem_View.verticalScrollBar().maximum()
         if value >= max_scroll and self.current_index < self.total_items:
-            self.load_items()
-    
-    def on_scroll_byte(self, value):
-        max_scroll = self.Addrr_Mem_View_Byte.verticalScrollBar().maximum()
-        if value >= max_scroll and self.current_index_byte < self.total_items:
-            self.load_items_byte()
-    
-    def reset_search_memory(self):
-        for row in range(self.model.rowCount()):
-            for col in range(self.model.columnCount()):
-                 self.model.item(row, col).setBackground(QtGui.QColor("white"))
-                 
-    def reset_search_memory_byte(self):
-        for row in range(self.model_byte.rowCount()):
-            for col in range(self.model_byte.columnCount()):
-                 self.model_byte.item(row, col).setBackground(QtGui.QColor("white"))
-
+            self.load_mem_x1()
+            self.load_mem_x2()
+            self.load_mem_x4()
+            self.load_mem_x8()
+            self.load_mem_x1_byte()
+            self.load_mem_x2_byte()
+            self.load_mem_x4_byte()
+            self.load_mem_x8_byte()
     def search_memory(self):
-        self.reset_search_memory()
-        search_text = self.Address_search_LineEdit_word.text()
+        self.reset_search_memory(self.model)
+        self.reset_search_memory(self.model_2)
+        self.reset_search_memory(self.model_4)
+        self.reset_search_memory(self.model_8)
+        self.reset_search_memory(self.model_byte)
+        self.reset_search_memory(self.model_2_byte)
+        self.reset_search_memory(self.model_4_byte)
+        self.reset_search_memory(self.model_8_byte)
+        
+        self.highlight_search_memory(self.model)
+        self.highlight_search_memory(self.model_2)
+        self.highlight_search_memory(self.model_4)
+        self.highlight_search_memory(self.model_8)
+        self.highlight_search_memory(self.model_byte)
+        self.highlight_search_memory(self.model_2_byte)
+        self.highlight_search_memory(self.model_4_byte)
+        self.highlight_search_memory(self.model_8_byte)
+    def reset_search_memory(self, model):
+        for row in range(1, model.rowCount()):
+            for col in range(1, model.columnCount()):
+                if model.item(row, col):
+                    model.item(row, col).setBackground(QtGui.QColor("white"))
+    def highlight_search_memory(self, model):
+        search_text = self.Address_search_LineEdit.text()
         if search_text:
             found = False
             search_value  = int(search_text, 16)
             while not found and self.current_index > 0:
-                for row in range(self.model.rowCount()):
-                    item = self.model.item(row, 0)
-                    if item is not None and search_text.lower() in item.text().lower():
-                        for col in range(self.model.columnCount()):
-                            self.model.item(row, col).setBackground(QtGui.QColor("yellow"))
-                        self.Addrr_Mem_View_Word.scrollTo(self.model.indexFromItem(item))
+                max_row = model.rowCount() - 1
+                for row in range(1, model.rowCount()):
+                    item_addr = model.item(row, 0)
+                    if row != max_row:
+                        item_addr_next = model.item(row + 1, 0)
+                        addr_next = item_addr_next.text()
+                    if item_addr:
+                        addr = item_addr.text()
+                    if search_value == int(addr, 16):
+                        model.item(row, 1).setBackground(QtGui.QColor("yellow"))
+                        break
+                    if addr_next and search_value > int(addr, 16) and search_value < int(addr_next, 16):
+                        num = int((search_value - int(addr, 16)) / 4) + 1
+                        model.item(row, num).setBackground(QtGui.QColor("yellow"))
+                        break
+                    if not addr_next and search_value > int(addr, 16):
+                        num = int((search_value - int(addr, 16)) / 4) + 1
+                        model.item(row, num).setBackground(QtGui.QColor("yellow"))
                         break
                 if not found:
-                    last_item_value = int(self.model.item(self.model.rowCount() - 1, 0).text(), 16)
+                    last_item_value = int(model.item(model.rowCount() - 1, 0).text(), 16)
                     if search_value < last_item_value:
                         break
-                    self.load_items()
-                    
-    def search_memory_byte(self):
-        self.reset_search_memory_byte()
-        search_text = self.Address_search_LineEdit_byte.text()
-        if search_text:
-            found = False
-            search_value  = int(search_text, 16)
-            while not found and self.current_index_byte > 0:
-                for row in range(self.model_byte.rowCount()):
-                    item = self.model_byte.item(row, 0)
-                    if item is not None and search_text.lower() in item.text().lower():
-                        for col in range(self.model_byte.columnCount()):
-                            self.model_byte.item(row, col).setBackground(QtGui.QColor("yellow"))
-                        self.Addrr_Mem_View_Byte.scrollTo(self.model_byte.indexFromItem(item))
-                        break
-                if not found:
-                    last_item_value = int(self.model_byte.item(self.model_byte.rowCount() - 1, 0).text(), 16)
-                    if search_value < last_item_value:
-                        break
-                    self.load_items_byte()
-                    
-    def show_word_memory(self):
-        self.stackedWidget.setCurrentIndex(0)
-
-    def show_byte_memory(self):
-        self.stackedWidget.setCurrentIndex(1)
+                    self.load_mem_x1()
+                    self.load_mem_x2()
+                    self.load_mem_x4()
+                    self.load_mem_x8()
+                    self.load_mem_x1_byte()
+                    self.load_mem_x2_byte()
+                    self.load_mem_x4_byte()
+                    self.load_mem_x8_byte()
         
     def show_code_edit(self):
         self.stackedCodeWidget.setCurrentIndex(0)
@@ -540,7 +686,7 @@ class Ui_MainWindow(object):
         lines_clean = [item for item in lines_clean if item not in [" ", None]]
         lines_clean = [' '.join(item.split()) for item in lines_clean if item.strip()]
         for index, line in enumerate(lines_clean, start=1):
-            pc_binary = '0x' + format(self.pc, '08x')
+            pc_binary = format(self.pc, '08x')
             self.address.append(pc_binary)
             self.pc += self.instruction_size
         self.data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
@@ -550,17 +696,23 @@ class Ui_MainWindow(object):
             memory_line = Create_memory.check_memory(self, line, self.address, lines_clean, self.data_labels)
             if memory_line:
                 int_memory_line = Decoder(memory_line)
-                memory_line = '0x' + format(int_memory_line, '08x')
+                memory_line = format(int_memory_line, '08x')
                 self.memory_current_line.append(memory_line)
             memory_line_branch = memory_branch(self, line, lines_clean, self.address, labels)
             if memory_line_branch:
                 int_memory_line_branch = Decoder(memory_line_branch)
-                memory_line_branch = '0x' + format(int_memory_line_branch, '08x')
+                memory_line_branch = format(int_memory_line_branch, '08x')
                 self.memory_current_line.append(memory_line_branch)
         if data_memory:
-            self.memory_current_line.extend(data_memory)        
+            self.memory_current_line.extend(data_memory)
         replace_memory(self.model, self.address, self.memory_current_line)
+        replace_memory(self.model_2, self.address, self.memory_current_line)
+        replace_memory(self.model_4, self.address, self.memory_current_line)
+        replace_memory(self.model_8, self.address, self.memory_current_line)
         replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_2_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_4_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_8_byte, self.address, self.memory_current_line)
         for line in lines:
             if not line.endswith(':'):
                 item1 = QtGui.QStandardItem()
@@ -619,52 +771,52 @@ class Ui_MainWindow(object):
         self.StepButton.setText(_translate("MainWindow", "Step"))
         self.RunButton.setText(_translate("MainWindow", "Run"))
         self.r0_Label.setText(_translate("MainWindow", "r0"))
-        self.r0_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r0_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r0_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r1_Label.setText(_translate("MainWindow", "r1"))
-        self.r1_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r1_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r1_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r2_Label.setText(_translate("MainWindow", "r2"))
-        self.r2_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r2_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r2_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r3_Label.setText(_translate("MainWindow", "r3"))
-        self.r3_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r3_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r3_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r4_Label.setText(_translate("MainWindow", "r4"))
-        self.r4_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r4_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r4_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r5_Label.setText(_translate("MainWindow", "r5"))
-        self.r5_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r5_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r5_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r6_Label.setText(_translate("MainWindow", "r6"))
-        self.r6_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r6_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r6_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r7_Label.setText(_translate("MainWindow", "r7"))
-        self.r7_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r7_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r7_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r8_Label.setText(_translate("MainWindow", "r8"))
-        self.r8_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r8_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r8_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r9_Label.setText(_translate("MainWindow", "r9"))
-        self.r9_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r9_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r9_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r10_Label.setText(_translate("MainWindow", "r10"))
-        self.r10_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r10_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r10_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r11_Label.setText(_translate("MainWindow", "r11"))
-        self.r11_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r11_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r11_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.r12_Label.setText(_translate("MainWindow", "r12"))
-        self.r12_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.r12_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.r12_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.sp_Label.setText(_translate("MainWindow", "sp"))
-        self.sp_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.sp_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.sp_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.lr_Label.setText(_translate("MainWindow", "lr"))
-        self.lr_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.lr_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.lr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.pc_Label.setText(_translate("MainWindow", "pc"))
-        self.pc_LineEdit.setText(_translate("MainWindow", '0x' + format(0, '08x')))
+        self.pc_LineEdit.setText(_translate("MainWindow", format(0, '08x')))
         self.pc_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.n_Label.setText(_translate("MainWindow", "N"))
         self.n_LineEdit.setText(_translate("MainWindow", "0"))
@@ -679,29 +831,30 @@ class Ui_MainWindow(object):
         self.v_LineEdit.setText(_translate("MainWindow", "0"))
         self.v_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.cpsr_Label.setText(_translate("MainWindow", "cpsr"))
-        self.cpsr_LineEdit.setText(_translate("MainWindow", "0x00000000"))
+        self.cpsr_LineEdit.setText(_translate("MainWindow", "00000000"))
         self.cpsr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.spsr_Label.setText(_translate("MainWindow", "spsr"))
-        self.spsr_LineEdit.setText(_translate("MainWindow", "0x00000000"))
+        self.spsr_LineEdit.setText(_translate("MainWindow", "00000000"))
         self.spsr_LineEdit.setStyleSheet("font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
         self.ImportButton.setText(_translate("MainWindow", "Import"))
         self.ExportButton.setText(_translate("MainWindow", "Export"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_1), _translate("MainWindow", "Editor"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_memory), _translate("MainWindow", "Memory"))
-        self.Address_search_LineEdit_word.setText(_translate("MainWindow", "0x00000000"))
-        self.GotoAddr_word.setText(_translate("MainWindow", "Go to Address"))
-        self.Address_search_LineEdit_byte.setText(_translate("MainWindow", "0x00000000"))
-        self.GotoAddr_byte.setText(_translate("MainWindow", "Go to Address"))
+        self.Address_search_LineEdit.setText(_translate("MainWindow", "00000000"))
+        self.GotoAddr.setText(_translate("MainWindow", "Go to Address"))
         self.groupBox.setTitle(_translate("MainWindow", "Option"))
-        self.SizeWordButton.setText(_translate("MainWindow", "Word"))
-        self.label_size_memory.setText(_translate("MainWindow", "Size Memory:"))
-        self.SizeByteButton.setText(_translate("MainWindow", "Byte"))
-        self.label_memory_words_per_row.setText(_translate("MainWindow", "Memory words\n"
+        self.label_size_memory.setText(_translate("MainWindow", "Size\n"
+"Memory:"))
+        self.label_memory_words_per_row.setText(_translate("MainWindow", "Memory\n"
+"words\n"
 "per row:"))
-        self.x8_memory_words_per_row.setText(_translate("MainWindow", "8"))
-        self.x4_memory_words_per_row.setText(_translate("MainWindow", "4"))
-        self.x2_memory_words_per_row.setText(_translate("MainWindow", "2"))
-        self.x1_memory_words_per_row.setText(_translate("MainWindow", "1"))
+        self.comboBox_memory_words_per_row.setItemText(0, _translate("MainWindow", "1"))
+        self.comboBox_memory_words_per_row.setItemText(1, _translate("MainWindow", "2"))
+        self.comboBox_memory_words_per_row.setItemText(2, _translate("MainWindow", "4"))
+        self.comboBox_memory_words_per_row.setItemText(3, _translate("MainWindow", "8"))
+        self.comboBox_memory_words_per_row.setCurrentIndex(0)
+        self.comboBox_size_memory.setItemText(0, _translate("MainWindow", "Word"))
+        self.comboBox_size_memory.setItemText(1, _translate("MainWindow", "Byte"))
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
     pc = 0
@@ -737,7 +890,9 @@ class Ui_MainWindow(object):
             self.pc_LineEdit.setText(pc_binary)
             if line.strip():
                 label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, self.memory_current_line, self.data_labels
+                                                                                                      , self.model, self.model_2, self.model_4, self.model_8
+                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte)
                 self.current_line_index += 1
             elif not line.strip():
                 QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
@@ -759,18 +914,18 @@ class Ui_MainWindow(object):
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
                 result_int = int(arguments[0], 2)
-                result_str = '0x' + format(result_int, '08x')
+                result_str = format(result_int, '08x')
                 line_edit.setText(result_str)
                 line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments and len(reg) == 2 and len(arguments) == 2:
                 line_edit_1 = line_edit_dict.get(reg[0])
                 result_int_1 = int(arguments[0], 2)
-                result_str_1 = '0x' + format(result_int_1, '08x')
+                result_str_1 = format(result_int_1, '08x')
                 line_edit_1.setText(result_str_1)
                 line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
                 line_edit_2 = line_edit_dict.get(reg[1])
                 result_int_2 = int(arguments[1], 2)
-                result_str_2 = '0x' + format(result_int_2, '08x')
+                result_str_2 = format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
                 line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments is None and (flag_T or self.current_line_index == len(self.address)):
@@ -845,7 +1000,9 @@ class Ui_MainWindow(object):
             current_line = lines[self.current_line_index]
             if current_line.strip():
                 label, flag_B = check_branch(self, current_line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels, self.model, self.model_byte)
+                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels
+                                                                                                      , self.model, self.model_2, self.model_4, self.model_8
+                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte)
                 self.current_line_index += 1
             if label in labels:
                 position = lines.index(labels[label][0])
@@ -861,18 +1018,18 @@ class Ui_MainWindow(object):
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
                 result_int = int(arguments[0], 2)
-                result_str = '0x' + format(result_int, '08x')
+                result_str = format(result_int, '08x')
                 line_edit.setText(result_str)
                 line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments and len(reg) == 2 and len(arguments) == 2:
                 line_edit_1 = line_edit_dict.get(reg[0])
                 result_int_1 = int(arguments[0], 2)
-                result_str_1 = '0x' + format(result_int_1, '08x')
+                result_str_1 = format(result_int_1, '08x')
                 line_edit_1.setText(result_str_1)
                 line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
                 line_edit_2 = line_edit_dict.get(reg[1])
                 result_int_2 = int(arguments[1], 2)
-                result_str_2 = '0x' + format(result_int_2, '08x')
+                result_str_2 = format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
                 line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             elif arguments is None and (flag_T or self.current_line_index == len(lines)):
@@ -903,43 +1060,95 @@ class Ui_MainWindow(object):
         self.address = []
         self.memory_current_line = []
         self.show_code_edit()
-        self.reset_search_memory()
         self.reset_backgroud_register()
         self.reset_highlight()
-        self.r0_LineEdit.setText('0x' + format(0, '08x'))
-        self.r1_LineEdit.setText('0x' + format(0, '08x'))
-        self.r2_LineEdit.setText('0x' + format(0, '08x'))
-        self.r3_LineEdit.setText('0x' + format(0, '08x'))
-        self.r4_LineEdit.setText('0x' + format(0, '08x'))
-        self.r5_LineEdit.setText('0x' + format(0, '08x'))
-        self.r6_LineEdit.setText('0x' + format(0, '08x'))
-        self.r7_LineEdit.setText('0x' + format(0, '08x'))
-        self.r8_LineEdit.setText('0x' + format(0, '08x'))
-        self.r9_LineEdit.setText('0x' + format(0, '08x'))
-        self.r10_LineEdit.setText('0x' + format(0, '08x'))
-        self.r11_LineEdit.setText('0x' + format(0, '08x'))
-        self.r12_LineEdit.setText('0x' + format(0, '08x'))
-        self.sp_LineEdit.setText('0x' + format(0, '08x'))
-        self.lr_LineEdit.setText('0x' + format(0, '08x'))
+        self.r0_LineEdit.setText(format(0, '08x'))
+        self.r1_LineEdit.setText(format(0, '08x'))
+        self.r2_LineEdit.setText(format(0, '08x'))
+        self.r3_LineEdit.setText(format(0, '08x'))
+        self.r4_LineEdit.setText(format(0, '08x'))
+        self.r5_LineEdit.setText(format(0, '08x'))
+        self.r6_LineEdit.setText(format(0, '08x'))
+        self.r7_LineEdit.setText(format(0, '08x'))
+        self.r8_LineEdit.setText(format(0, '08x'))
+        self.r9_LineEdit.setText(format(0, '08x'))
+        self.r10_LineEdit.setText(format(0, '08x'))
+        self.r11_LineEdit.setText(format(0, '08x'))
+        self.r12_LineEdit.setText(format(0, '08x'))
+        self.sp_LineEdit.setText(format(0, '08x'))
+        self.lr_LineEdit.setText(format(0, '08x'))
         self.pc = 0
-        self.pc_LineEdit.setText('0x' + format(0, '08x'))
+        self.pc_LineEdit.setText(format(0, '08x'))
         self.current_line_index = 0
         self.n_LineEdit.setText("0")
         self.z_LineEdit.setText("0")
         self.c_LineEdit.setText("0")
         self.v_LineEdit.setText("0")
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(["Address", "Memory"])
-        self.current_index = 0
-        self.load_items()
-        self.Address_search_LineEdit_word.setText('0x' + format(0, '08x'))
-        self.Addrr_Mem_View_Word.scrollToTop()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model.appendRow([label_address, label_memory])
+        self.model_2.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_2.appendRow([label_address, label_memory])
+        self.model_4.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_4.appendRow([label_address, label_memory])
+        self.model_8.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_8.appendRow([label_address, label_memory])
         self.model_byte.clear()
-        self.model_byte.setHorizontalHeaderLabels(["Address", "Memory"])
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_byte.appendRow([label_address, label_memory])
+        self.model_2_byte.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_2_byte.appendRow([label_address, label_memory])
+        self.model_4_byte.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_4_byte.appendRow([label_address, label_memory])
+        self.model_8_byte.clear()
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        self.model_8_byte.appendRow([label_address, label_memory])
+        self.current_index = 0
+        self.current_index_x2 = 0
+        self.current_index_x4 = 0
+        self.current_index_x8 = 0
         self.current_index_byte = 0
-        self.load_items_byte()
-        self.Address_search_LineEdit_byte.setText('0x' + format(0, '08x'))
-        self.Addrr_Mem_View_Byte.scrollToTop()
+        self.current_index_x2_byte = 0
+        self.current_index_x4_byte = 0
+        self.current_index_x8_byte = 0
+        self.load_mem_x1()
+        self.load_mem_x2()
+        self.load_mem_x4()
+        self.load_mem_x8()
+        self.load_mem_x1_byte()
+        self.load_mem_x2_byte()
+        self.load_mem_x4_byte()
+        self.load_mem_x8_byte()
+        self.Address_search_LineEdit.setText(format(0, '08x'))
         self.row = []
         self.bkpt = []
         self.have_compile = False
