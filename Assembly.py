@@ -354,7 +354,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_2
                             return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                         num_result = num_1 + num_2
                         num_result_str = Encoder(num_result)
-                        hex_str = '0x' + format(num_result, '08x')
+                        hex_str = format(num_result, '08x')
                     elif not exclamation_check:
                         if regex_const.match(mem[1]):
                             clean_num = mem[1].lstrip('#')
@@ -368,7 +368,7 @@ def check_assembly_line(self, line, address, memory, data_labels, model, model_2
                         else:
                             return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                     num_result = num_1 + num_2
-                    hex_str = '0x' + format(num_result, '08x')
+                    hex_str = format(num_result, '08x')
                 elif not bracket_mem:
                     return None, None, flag_N, flag_Z, flag_C, flag_V, flag_T
                 

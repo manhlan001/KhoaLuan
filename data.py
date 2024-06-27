@@ -51,7 +51,7 @@ def process_data(data_lines, address):
         temp = []
         for line in data_lines:
             address_data_base += 4
-            address_data_base_str = '0x' + format(address_data_base, '08x')
+            address_data_base_str = format(address_data_base, '08x')
             data_address.append(address_data_base_str)
             stripped_line = line.strip()
             result = is_special_or_digit(stripped_line)
@@ -73,12 +73,12 @@ def process_data(data_lines, address):
                     parts = parts[2:]
                     for part in parts:
                         address_data_base += 4
-                        address_data_base_str = '0x' + format(address_data_base, '08x')
+                        address_data_base_str = format(address_data_base, '08x')
                         if part == parts[0]:
                             data_memory.append(address_data_base_str)
                         if regex_const.match(part):
                             num = int(part)
-                            num_str = '0x' + format(num, '08x')
+                            num_str = format(num, '08x')
                             temp.append(num_str)
                             data_address.append(address_data_base_str)
                 else:

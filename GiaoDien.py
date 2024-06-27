@@ -11,13 +11,70 @@ import re
 import sys
 import Assembly
 import data
-import paint
 from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory, replace_memory_byte
 from Branch import check_branch, memory_branch
 import Create_memory
 from encoder import Encoder
 from decoder import Decoder
 COLON_REGEX = re.compile(r"\:")
+
+from PyQt6 import QtWidgets, QtGui, QtCore
+
+class CustomCheckBoxDelegate(QtWidgets.QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        if index.data(QtCore.Qt.ItemDataRole.CheckStateRole) is not None:
+            self.drawCircle(painter, option, index)
+        else:
+            super().paint(painter, option, index)
+    def drawCircle(self, painter, option, index):
+        checked = index.data(QtCore.Qt.ItemDataRole.CheckStateRole) == QtCore.Qt.CheckState.Checked
+        rect = option.rect
+        size = min(rect.width(), rect.height()) // 2
+        circle_rect = QtCore.QRect(
+            rect.left() + (rect.width() - size) // 2,
+            rect.top() + (rect.height() - size) // 2,
+            size,
+            size
+        )
+        painter.save()
+        if checked:
+            painter.setBrush(QtGui.QColor('red'))
+        else:
+            painter.setBrush(QtGui.QColor('white'))
+        painter.setPen(QtGui.QPen(QtGui.QColor('white'), 1))
+        painter.drawEllipse(circle_rect)
+        painter.restore()
+    def editorEvent(self, event, model, option, index):
+        if event.type() == QtCore.QEvent.Type.MouseButtonRelease:
+            if index.flags() & QtCore.Qt.ItemFlag.ItemIsEnabled and index.flags() & QtCore.Qt.ItemFlag.ItemIsUserCheckable:
+                current_value = index.data(QtCore.Qt.ItemDataRole.CheckStateRole)
+                new_value = QtCore.Qt.CheckState.Checked if current_value == QtCore.Qt.CheckState.Unchecked else QtCore.Qt.CheckState.Unchecked
+                model.setData(index, new_value, QtCore.Qt.ItemDataRole.CheckStateRole)
+                return True
+        return super().editorEvent(event, model, option, index)
+
+class CustomTableView(QtWidgets.QTableView):
+    def __init__(self, parent=None, input_value = 0):
+        super().__init__(parent)
+        self.setShowGrid(False)
+        self.input = input_value
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QtGui.QPainter(self.viewport())
+        painter.setPen(QtGui.QColor(QtCore.Qt.GlobalColor.darkGray))
+        column_count = self.model().columnCount()
+        if self.input == 1:
+            column = 0
+            x = self.columnViewportPosition(column) + self.columnWidth(column)
+            painter.drawLine(x, 0, x, self.viewport().height())
+        else:
+            for column in range(column_count - 1):
+                x = self.columnViewportPosition(column) + self.columnWidth(column)
+                painter.drawLine(x, 0, x, self.viewport().height())
+    def setBackgroundColumn(self, model, column_index, color):
+        for row in range(model.rowCount()):
+            index = model.index(row, column_index)
+            model.setData(index, QtGui.QColor(color), QtCore.Qt.ItemDataRole.BackgroundRole)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -82,12 +139,11 @@ class Ui_MainWindow(object):
         self.stackedCodeWidget.addWidget(self.pageCode_1)
         self.pageCode_2 = QtWidgets.QWidget()
         self.pageCode_2.setObjectName("pageCode_2")
-        self.CodeView = QtWidgets.QTableView(parent=self.pageCode_2)
+        self.CodeView = CustomTableView(parent=self.pageCode_2)
         self.CodeView.setGeometry(QtCore.QRect(10, 20, 611, 571))
         self.CodeView.setObjectName("CodeView")
-        self.CodeView.setShowGrid(False)
-        self.CodeView.setGridStyle(QtCore.Qt.PenStyle.NoPen)
         self.CodeView.verticalHeader().setVisible(False)
+        self.CodeView.horizontalHeader().setVisible(False)
         self.stackedCodeWidget.addWidget(self.pageCode_2)
         
         self.CompileButton.clicked.connect(self.show_code_view)
@@ -345,9 +401,12 @@ class Ui_MainWindow(object):
         self.GotoAddr = QtWidgets.QPushButton(parent=self.formLayoutWidget_5)
         self.GotoAddr.setObjectName("GotoAddr")
         self.formLayout_4.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.GotoAddr)
-        self.Addrr_Mem_View = QtWidgets.QTreeView(parent=self.tab_memory)
+        self.Addrr_Mem_View = CustomTableView(parent=self.tab_memory, input_value=1)
         self.Addrr_Mem_View.setGeometry(QtCore.QRect(10, 50, 921, 541))
         self.Addrr_Mem_View.setObjectName("Addrr_Mem_View")
+        self.Addrr_Mem_View.verticalHeader().setVisible(False)
+        self.Addrr_Mem_View.horizontalHeader().setVisible(False)
+        self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
         self.tabWidget.addTab(self.tab_memory, "")
         self.gridLayout.addWidget(self.tabWidget, 1, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
@@ -358,72 +417,35 @@ class Ui_MainWindow(object):
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
-        self.model_code = QtGui.QStandardItemModel(0, 2)
+        self.model_code = QtGui.QStandardItemModel(0, 3)
         self.CodeView.setModel(self.model_code)
         self.CodeView.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
+        self.model_code = self.Add_header_model_code(self.model_code)
         
         self.model = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model.appendRow([label_address, label_memory])
+        self.model = self.Add_header_model_mem(self.model)
         
         self.model_2 = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_2.appendRow([label_address, label_memory])
+        self.model_2 = self.Add_header_model_mem(self.model_2)
         
         self.model_4 = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_4.appendRow([label_address, label_memory])
+        self.model_4 = self.Add_header_model_mem(self.model_4)
         
         self.model_8 = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_8.appendRow([label_address, label_memory])
+        self.model_8 = self.Add_header_model_mem(self.model_8)
         
         self.model_byte = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_byte.appendRow([label_address, label_memory])
+        self.model_byte = self.Add_header_model_mem(self.model_byte)
         
         self.model_2_byte = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_2_byte.appendRow([label_address, label_memory])
+        self.model_2_byte = self.Add_header_model_mem(self.model_2_byte)
         
         self.model_4_byte = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_4_byte.appendRow([label_address, label_memory])
+        self.model_4_byte = self.Add_header_model_mem(self.model_4_byte)
         
         self.model_8_byte = QtGui.QStandardItemModel(0, 7)
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_8_byte.appendRow([label_address, label_memory])
+        self.model_8_byte = self.Add_header_model_mem(self.model_8_byte)
     
-        self.Addrr_Mem_View.setColumnWidth(0, 92)
-        self.Addrr_Mem_View.setHeaderHidden(True)
-        self.Addrr_Mem_View.setFirstColumnSpanned(1, QtCore.QModelIndex(), False)
-        self.Addrr_Mem_View.verticalScrollBar().valueChanged.connect(self.on_scroll)
-        
         self.current_index = 0
         self.current_index_x2 = 0
         self.current_index_x4 = 0
@@ -445,12 +467,68 @@ class Ui_MainWindow(object):
         self.load_mem_x8_byte()
         self.check_mem_per_row_option()
         
-        delegate = paint.CustomCheckBoxDelegate(self.CodeView)
+        delegate = CustomCheckBoxDelegate(self.CodeView)
         self.CodeView.setItemDelegateForColumn(0, delegate)
         
         self.GotoAddr.clicked.connect(self.search_memory)
         self.comboBox_memory_words_per_row.currentIndexChanged.connect(self.check_mem_per_row_option)
         self.comboBox_size_memory.currentIndexChanged.connect(self.check_mem_per_row_option)
+    
+    def Add_header_model_code(self, model_code):
+        label_bkpt = QtGui.QStandardItem()
+        label_bkpt.setCheckState(QtCore.Qt.CheckState.Checked)
+        label_bkpt.setData(QtCore.Qt.CheckState.Checked, QtCore.Qt.ItemDataRole.CheckStateRole)
+        label_bkpt.setCheckable(False)
+        label_bkpt.setFlags(label_bkpt.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_address_code = QtGui.QStandardItem('Address')
+        label_address_code.setFlags(label_address_code.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_address_code.setBackground(QtGui.QColor("#F0F8FF"))
+        label_address_code.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        label_opcode = QtGui.QStandardItem('Opcode')
+        label_opcode.setFlags(label_opcode.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_opcode.setBackground(QtGui.QColor("#F0F8FF"))
+        label_opcode.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        label_assembly = QtGui.QStandardItem('Assembly')
+        label_assembly.setFlags(label_assembly.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_assembly.setBackground(QtGui.QColor("#F0F8FF"))
+        label_assembly.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        model_code.appendRow([label_bkpt, label_address_code, label_opcode, label_assembly])
+        self.CodeView.setColumnWidth(0, 25)
+        self.CodeView.setColumnWidth(1, 80)
+        self.CodeView.setColumnWidth(2, 80)
+        self.CodeView.setColumnWidth(3, 380)
+        return model_code
+    def Add_header_model_mem(self, model):
+        self.Addrr_Mem_View.setSpan(0, 1, 1, 8)
+        label_address = QtGui.QStandardItem('Address')
+        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_address.setBackground(QtGui.QColor("#F0F8FF"))
+        label_memory = QtGui.QStandardItem('Memory')
+        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_memory.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_1 = QtGui.QStandardItem(" ")
+        label_space_1.setFlags(label_space_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_1.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_2 = QtGui.QStandardItem(" ")
+        label_space_2.setFlags(label_space_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_2.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_3 = QtGui.QStandardItem(" ")
+        label_space_3.setFlags(label_space_3.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_3.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_4 = QtGui.QStandardItem(" ")
+        label_space_4.setFlags(label_space_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_4.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_5 = QtGui.QStandardItem(" ")
+        label_space_5.setFlags(label_space_5.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_5.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_6 = QtGui.QStandardItem(" ")
+        label_space_6.setFlags(label_space_6.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_6.setBackground(QtGui.QColor("#F0F8FF"))
+        label_space_7 = QtGui.QStandardItem(" ")
+        label_space_7.setFlags(label_space_7.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+        label_space_7.setBackground(QtGui.QColor("#F0F8FF"))
+        model.appendRow([label_address, label_memory, label_space_1, label_space_2, label_space_3, label_space_4, label_space_5, label_space_6, label_space_7])
+        return model
     
     def check_mem_per_row_option(self):
         if self.comboBox_size_memory.currentIndex() == 0:
@@ -483,7 +561,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 4, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aaaaaaaa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model.appendRow([addr, mem_1])
@@ -492,7 +570,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 4, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_byte.appendRow([addr, mem_1])
@@ -501,7 +579,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x2, min(self.current_index_x2 + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 8, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aaaaaaaa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aaaaaaaa')
@@ -512,7 +590,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x2_byte, min(self.current_index_x2_byte + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 8, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
@@ -523,7 +601,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x4, min(self.current_index_x4 + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 16, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aaaaaaaa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aaaaaaaa')
@@ -538,7 +616,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x4_byte, min(self.current_index_x4_byte + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 16, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
@@ -553,7 +631,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x8, min(self.current_index_x8 + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 32, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aaaaaaaa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aaaaaaaa')
@@ -576,7 +654,7 @@ class Ui_MainWindow(object):
         for i in range(self.current_index_x8_byte, min(self.current_index_x8_byte + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 32, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            addr.setBackground(QtGui.QColor("#00FFFF"))
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
@@ -713,30 +791,40 @@ class Ui_MainWindow(object):
         replace_memory_byte(self.model_2_byte, self.address, self.memory_current_line)
         replace_memory_byte(self.model_4_byte, self.address, self.memory_current_line)
         replace_memory_byte(self.model_8_byte, self.address, self.memory_current_line)
+        mapping_addr_line = {key: value for key, value in zip(lines_clean, self.address)}
+        mapping_addr_mem = {key: value for key, value in zip(self.address, self.memory_current_line)}
         for line in lines:
             if not line.endswith(':'):
-                item1 = QtGui.QStandardItem()
-                item1.setCheckable(True)
-                item1.setCheckState(QtCore.Qt.CheckState.Unchecked)
-                item2 = QtGui.QStandardItem("  " + line)
+                bkpt = QtGui.QStandardItem()
+                bkpt.setCheckable(True)
+                bkpt.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                addr = QtGui.QStandardItem(mapping_addr_line.get(line))
+                opcode = QtGui.QStandardItem(mapping_addr_mem.get(mapping_addr_line.get(line)))
+                assembly = QtGui.QStandardItem("    " + line)
             if line.endswith(':'):
-                item1 = QtGui.QStandardItem(line.upper())
-                item2 = QtGui.QStandardItem(" ")
-            item1.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
-            item2.setFlags(item2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            self.model_code.appendRow([item1, item2])
-        self.CodeView.setColumnWidth(0, 100)
-        self.CodeView.setColumnWidth(1, 472)
-        item = self.model_code.item(0, 1)
+                bkpt = QtGui.QStandardItem(" ")
+                addr = QtGui.QStandardItem(" ")
+                opcode = QtGui.QStandardItem(" ")
+                assembly = QtGui.QStandardItem(line.upper())
+            bkpt.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
+            addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            addr.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            addr.setBackground(QtGui.QColor("#F0F8FF"))
+            opcode.setFlags(opcode.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            opcode.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            opcode.setBackground(QtGui.QColor("#F0F8FF"))
+            assembly.setFlags(assembly.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.model_code.appendRow([bkpt, addr, opcode, assembly])
+        item = self.model_code.item(1, 3)
         item.setBackground(QtGui.QColor("Yellow"))
         self.stackedCodeWidget.setCurrentIndex(1)
         self.have_compile = True
     
     bkpt = []
     def Code_BreakPoint(self):
-        for row in range(self.model_code.rowCount()):
-            item_checkbox = self.model_code.item(row, 0)  # First column
-            item_line = self.model_code.item(row, 1)      # Second column
+        for row in range(1, self.model_code.rowCount()):
+            item_checkbox = self.model_code.item(row, 0)
+            item_line = self.model_code.item(row, 3)
             if item_checkbox.isCheckable() and item_checkbox.checkState() == QtCore.Qt.CheckState.Checked:
                 line = item_line.text().strip()
                 self.bkpt.append(line)
@@ -852,9 +940,10 @@ class Ui_MainWindow(object):
         self.comboBox_memory_words_per_row.setItemText(1, _translate("MainWindow", "2"))
         self.comboBox_memory_words_per_row.setItemText(2, _translate("MainWindow", "4"))
         self.comboBox_memory_words_per_row.setItemText(3, _translate("MainWindow", "8"))
-        self.comboBox_memory_words_per_row.setCurrentIndex(0)
+        self.comboBox_memory_words_per_row.setCurrentIndex(3)
         self.comboBox_size_memory.setItemText(0, _translate("MainWindow", "Word"))
         self.comboBox_size_memory.setItemText(1, _translate("MainWindow", "Byte"))
+        self.comboBox_size_memory.setCurrentIndex(0)
         self.label.setText(_translate("MainWindow", "ARMv7-M instruction set simulator"))
         
     pc = 0
@@ -868,13 +957,12 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
             return
         global pc
-        memory = []
         text = self.CodeEditText.toPlainText()
         if not text:
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
             return
         lines = text.split("\n")
-        lines, data_lines = data.parse_data(lines)
+        lines, _ = data.parse_data(lines)
         labels, lines = parse_labels(lines)
         lines = [item for item in lines if item not in ["", None]]
         lines = [' '.join(item.split()) for item in lines if item.strip()]
@@ -951,15 +1039,18 @@ class Ui_MainWindow(object):
                 c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-                    
+        if self.current_line_index >= len(lines):
+            for row in range(1, self.model_code.rowCount()):
+                item = self.model_code.item(row, 3)
+                if item != None:
+                    item.setBackground(QtGui.QColor("#7fffd4"))
     memory_current_line = []
     data_labels = []
     def reset_highlight(self):
-        for row in range(self.model_code.rowCount()):
-            for column in range(self.model_code.columnCount()):
-                item = self.model_code.item(row, column)
-                if item != None:
-                    item.setBackground(QtGui.QColor("white"))
+        for row in range(1, self.model_code.rowCount()):
+            item = self.model_code.item(row, 3)
+            if item != None:
+                item.setBackground(QtGui.QColor("white"))
     def highlight_next_line(self, line):
         self.reset_highlight()
         row_count = self.model_code.rowCount()
@@ -971,11 +1062,11 @@ class Ui_MainWindow(object):
         lines, _ = data.parse_data(lines)
         lines = [item for item in lines if item not in [" ", None]]
         lines = [' '.join(item.split()) for item in lines if item.strip()]
-        self.row = [i for i in range(row_count)]
+        self.row = [i for i in range(1, row_count)]
         highlight = {key: value for key, value in zip(lines, self.row)}
         if line in lines:
             index = highlight.get(line)
-            item = self.model_code.item(index, 1)
+            item = self.model_code.item(index, 3)
             item.setBackground(QtGui.QColor("Yellow"))
             
     def check_next_line(self):
@@ -988,7 +1079,7 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
             return
         lines = text.split("\n")
-        lines, data_lines = data.parse_data(lines)
+        lines, _ = data.parse_data(lines)
         labels, lines = parse_labels(lines)
         lines = [item for item in lines if item not in ["", None]]
         mapping = {key: value for key, value in zip(self.address, lines)}
@@ -1012,6 +1103,10 @@ class Ui_MainWindow(object):
                 self.current_line_index = position
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
+                for row in range(1, self.model_code.rowCount()):
+                    item = self.model_code.item(row, 3)
+                    if item != None:
+                        item.setBackground(QtGui.QColor("#7fffd4"))
             else:
                 next_line = mapping.get(self.address[self.current_line_index])
                 self.highlight_next_line(next_line)
@@ -1084,54 +1179,6 @@ class Ui_MainWindow(object):
         self.z_LineEdit.setText("0")
         self.c_LineEdit.setText("0")
         self.v_LineEdit.setText("0")
-        self.model.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model.appendRow([label_address, label_memory])
-        self.model_2.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_2.appendRow([label_address, label_memory])
-        self.model_4.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_4.appendRow([label_address, label_memory])
-        self.model_8.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_8.appendRow([label_address, label_memory])
-        self.model_byte.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_byte.appendRow([label_address, label_memory])
-        self.model_2_byte.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_2_byte.appendRow([label_address, label_memory])
-        self.model_4_byte.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_4_byte.appendRow([label_address, label_memory])
-        self.model_8_byte.clear()
-        label_address = QtGui.QStandardItem('Address')
-        label_address.setFlags(label_address.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        label_memory = QtGui.QStandardItem('Memory')
-        label_memory.setFlags(label_memory.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-        self.model_8_byte.appendRow([label_address, label_memory])
         self.current_index = 0
         self.current_index_x2 = 0
         self.current_index_x4 = 0
@@ -1140,6 +1187,22 @@ class Ui_MainWindow(object):
         self.current_index_x2_byte = 0
         self.current_index_x4_byte = 0
         self.current_index_x8_byte = 0
+        self.model.clear()
+        self.model = self.Add_header_model_mem(self.model)
+        self.model_2.clear()
+        self.model_2 = self.Add_header_model_mem(self.model_2)
+        self.model_4.clear()
+        self.model_4 = self.Add_header_model_mem(self.model_4)
+        self.model_8.clear()
+        self.model_8 = self.Add_header_model_mem(self.model_8)
+        self.model_byte.clear()
+        self.model_byte = self.Add_header_model_mem(self.model_byte)
+        self.model_2_byte.clear()
+        self.model_2_byte = self.Add_header_model_mem(self.model_2_byte)
+        self.model_4_byte.clear()
+        self.model_4_byte = self.Add_header_model_mem(self.model_4_byte)
+        self.model_8_byte.clear()
+        self.model_8_byte = self.Add_header_model_mem(self.model_8_byte)
         self.load_mem_x1()
         self.load_mem_x2()
         self.load_mem_x4()
@@ -1153,7 +1216,7 @@ class Ui_MainWindow(object):
         self.bkpt = []
         self.have_compile = False
         self.model_code.clear()
-        self.model_code.setHorizontalHeaderLabels(["BreakPoint", "Assembly"])
+        self.model_code = self.Add_header_model_code(self.model_code)
         
     def export(self):
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save File", "", "Text Files (*.txt);;Assembly Files (*.s)")
