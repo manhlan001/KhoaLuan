@@ -2,6 +2,7 @@ import re
 import sys
 import Assembly
 import string
+import dict
 from encoder import Encoder
 from decoder import Decoder
 
@@ -78,6 +79,8 @@ def process_data(data_lines, address):
                             data_memory.append(address_data_base_str)
                         if regex_const.match(part):
                             num = int(part)
+                            num_bin_str = Encoder(num)
+                            num = Decoder(num_bin_str)
                             num_str = format(num, '08x')
                             temp.append(num_str)
                             data_address.append(address_data_base_str)

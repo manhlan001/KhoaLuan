@@ -7,12 +7,13 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+import time
+import threading
 import re
 import sys
 import Assembly
 import data
 from dict import line_edit_dict, conditon_dict, parse_labels, replace_memory, replace_memory_byte
-from Branch import check_branch, memory_branch
 import Create_memory
 from encoder import Encoder
 from decoder import Decoder
@@ -20,12 +21,33 @@ COLON_REGEX = re.compile(r"\:")
 
 from PyQt6 import QtWidgets, QtGui, QtCore
 
+class RunCode(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    progress = QtCore.pyqtSignal()
+    def __init__(self):
+        super().__init__()
+        self._running = False
+    def start_run_code(self):
+        self._running = True
+        while self._running:
+            self.progress.emit()
+            for _ in range(5000000):
+                pass
+        self.finished.emit()
+    def stop_run_code(self):
+        self._running = False
+
 class CustomCheckBoxDelegate(QtWidgets.QStyledItemDelegate):
     def paint(self, painter, option, index):
         if index.data(QtCore.Qt.ItemDataRole.CheckStateRole) is not None:
+            self.drawBackground(painter, option, index)
             self.drawCircle(painter, option, index)
         else:
             super().paint(painter, option, index)
+    def drawBackground(self, painter, option, index):
+        painter.save()
+        painter.fillRect(option.rect, QtGui.QColor('#DDDDDD'))
+        painter.restore()
     def drawCircle(self, painter, option, index):
         checked = index.data(QtCore.Qt.ItemDataRole.CheckStateRole) == QtCore.Qt.CheckState.Checked
         rect = option.rect
@@ -40,8 +62,8 @@ class CustomCheckBoxDelegate(QtWidgets.QStyledItemDelegate):
         if checked:
             painter.setBrush(QtGui.QColor('red'))
         else:
-            painter.setBrush(QtGui.QColor('white'))
-        painter.setPen(QtGui.QPen(QtGui.QColor('white'), 1))
+            painter.setBrush(QtGui.QColor('#DDDDDD'))
+        painter.setPen(QtGui.QPen(QtGui.QColor('#DDDDDD'), 1))
         painter.drawEllipse(circle_rect)
         painter.restore()
     def editorEvent(self, event, model, option, index):
@@ -52,29 +74,45 @@ class CustomCheckBoxDelegate(QtWidgets.QStyledItemDelegate):
                 model.setData(index, new_value, QtCore.Qt.ItemDataRole.CheckStateRole)
                 return True
         return super().editorEvent(event, model, option, index)
+    
+class CustomDelegate(QtWidgets.QStyledItemDelegate):
+    def __init__(self, parent=None, input_value=0, highlight_column=0):
+        super().__init__(parent)
+        self.input = input_value
+        self.highlight_column = highlight_column
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        if self.input == 0 and self.highlight_column == 0 and index.column() == 0:
+            option.backgroundBrush = QtGui.QBrush(QtGui.QColor("#DDDDDD"))
+        if self.input == 0 and self.highlight_column == 1 and (index.column() == 1 or index.column() == 2):
+            option.backgroundBrush = QtGui.QBrush(QtGui.QColor("#F0F8FF"))
 
 class CustomTableView(QtWidgets.QTableView):
-    def __init__(self, parent=None, input_value = 0):
+    def __init__(self, parent=None, input_value=0):
         super().__init__(parent)
         self.setShowGrid(False)
         self.input = input_value
+        self.delegate = CustomDelegate(self, input_value)
+        self.setItemDelegate(self.delegate)
+
+    def setHighlightColumn(self, column):
+        self.delegate.highlight_column = column
+        self.viewport().update()
+
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QtGui.QPainter(self.viewport())
         painter.setPen(QtGui.QColor(QtCore.Qt.GlobalColor.darkGray))
         column_count = self.model().columnCount()
         if self.input == 1:
-            column = 0
+            column = self.delegate.highlight_column
             x = self.columnViewportPosition(column) + self.columnWidth(column)
             painter.drawLine(x, 0, x, self.viewport().height())
         else:
             for column in range(column_count - 1):
                 x = self.columnViewportPosition(column) + self.columnWidth(column)
                 painter.drawLine(x, 0, x, self.viewport().height())
-    def setBackgroundColumn(self, model, column_index, color):
-        for row in range(model.rowCount()):
-            index = model.index(row, column_index)
-            model.setData(index, QtGui.QColor(color), QtCore.Qt.ItemDataRole.BackgroundRole)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -147,7 +185,7 @@ class Ui_MainWindow(object):
         self.stackedCodeWidget.addWidget(self.pageCode_2)
         
         self.CompileButton.clicked.connect(self.show_code_view)
-        self.RunButton.clicked.connect(self.Check)
+        self.RunButton.clicked.connect(self.RunCode)
         self.RestarButton.clicked.connect(self.Restart)
         self.StepButton.clicked.connect(self.check_next_line)
         self.ImportButton.clicked.connect(self.import_file)
@@ -412,6 +450,12 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
+        
+        self.thread = QtCore.QThread()
+        self.worker = RunCode()
+        self.worker.moveToThread(self.thread)
+        self.worker.progress.connect(self.Check)
+        self.worker.finished.connect(self.thread.quit)
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
@@ -744,8 +788,73 @@ class Ui_MainWindow(object):
                     self.load_mem_x2_byte()
                     self.load_mem_x4_byte()
                     self.load_mem_x8_byte()
+                    
+    def Check_Code_Assembly(self):
+        text = self.CodeEditText.toPlainText()
+        lines = text.split("\n")
+        lines, data_lines = data.parse_data(lines)
+        labels, lines_clean = parse_labels(lines)
+        lines = [item for item in lines if item not in [" ", None]]
+        lines = [' '.join(item.split()) for item in lines if item.strip()]
+        lines_clean = [item for item in lines_clean if item not in [" ", None]]
+        lines_clean = [' '.join(item.split()) for item in lines_clean if item.strip()]
+        for index, line in enumerate(lines_clean, start=1):
+            pc_binary = format(self.pc, '08x')
+            self.address.append(pc_binary)
+            self.pc += self.instruction_size
+        self.data_labels, data_address, data_memory = data.process_data(data_lines, self.address)
+        if data_address:
+            self.address.extend(data_address)
+        for index, line in enumerate(lines_clean, start=1):
+            memory_line = Create_memory.check_memory(self, line, self.address, lines_clean, self.data_labels)
+            if memory_line:
+                int_memory_line = Decoder(memory_line)
+                memory_line = format(int_memory_line, '08x')
+                self.memory_current_line.append(memory_line)
+            memory_line_branch = Create_memory.memory_branch(self, line, lines_clean, self.address, labels)
+            if memory_line_branch:
+                int_memory_line_branch = Decoder(memory_line_branch)
+                memory_line_branch = format(int_memory_line_branch, '08x')
+                self.memory_current_line.append(memory_line_branch)
+            memory_line_stacked = Create_memory.memory_stacked(self, line, lines_clean, self.address, labels)
+            if memory_line_stacked:
+                int_memory_line_stacked = Decoder(memory_line_stacked)
+                memory_line_stacked = format(int_memory_line_stacked, '08x')
+                self.memory_current_line.append(memory_line_stacked)
+        if data_memory:
+            self.memory_current_line.extend(data_memory)
+        replace_memory(self.model, self.address, self.memory_current_line)
+        replace_memory(self.model_2, self.address, self.memory_current_line)
+        replace_memory(self.model_4, self.address, self.memory_current_line)
+        replace_memory(self.model_8, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_2_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_4_byte, self.address, self.memory_current_line)
+        replace_memory_byte(self.model_8_byte, self.address, self.memory_current_line)
+        for i in range(len(lines_clean)):
+            line = lines_clean[i]
+            if line.strip():
+                _, arguments, label, flag_B, _, _, _, _, flag_T = Assembly.check_assembly_line(self, lines_clean, line, self.address, self.memory_current_line, self.data_labels
+                                                                                                    , self.model, self.model_2, self.model_4, self.model_8
+                                                                                                    , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte
+                                                                                                    , self.stacked)
+            if flag_B == 3:
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Out of range to POP!")
+                return True
+            if label != None and (label not in labels) and (label not in lines_clean):
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " ở dòng [" + line + "] trong chương trình")
+                return True
+            if flag_B or (arguments is None and flag_T):
+                pass
+            elif arguments is None:
+                QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + line + "]"+ " không hợp lệ")
+                return True
+        self.Restart()
+        return False
         
     def show_code_edit(self):
+        if self.thread.isRunning():
+            self.worker.stop_run_code()
         self.stackedCodeWidget.setCurrentIndex(0)
 
     have_compile = False
@@ -755,6 +864,9 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
             return
         if self.have_compile:
+            return
+        eror = self.Check_Code_Assembly()
+        if eror:
             return
         lines = text.split("\n")
         lines, data_lines = data.parse_data(lines)
@@ -776,11 +888,16 @@ class Ui_MainWindow(object):
                 int_memory_line = Decoder(memory_line)
                 memory_line = format(int_memory_line, '08x')
                 self.memory_current_line.append(memory_line)
-            memory_line_branch = memory_branch(self, line, lines_clean, self.address, labels)
+            memory_line_branch = Create_memory.memory_branch(self, line, lines_clean, self.address, labels)
             if memory_line_branch:
                 int_memory_line_branch = Decoder(memory_line_branch)
                 memory_line_branch = format(int_memory_line_branch, '08x')
                 self.memory_current_line.append(memory_line_branch)
+            memory_line_stacked = Create_memory.memory_stacked(self, line, lines_clean, self.address, labels)
+            if memory_line_stacked:
+                int_memory_line_stacked = Decoder(memory_line_stacked)
+                memory_line_stacked = format(int_memory_line_stacked, '08x')
+                self.memory_current_line.append(memory_line_stacked)
         if data_memory:
             self.memory_current_line.extend(data_memory)
         replace_memory(self.model, self.address, self.memory_current_line)
@@ -791,22 +908,28 @@ class Ui_MainWindow(object):
         replace_memory_byte(self.model_2_byte, self.address, self.memory_current_line)
         replace_memory_byte(self.model_4_byte, self.address, self.memory_current_line)
         replace_memory_byte(self.model_8_byte, self.address, self.memory_current_line)
-        mapping_addr_line = {key: value for key, value in zip(lines_clean, self.address)}
         mapping_addr_mem = {key: value for key, value in zip(self.address, self.memory_current_line)}
-        for line in lines:
+        temp = 0
+        for i in range(len(lines)):
+            line = lines[i]
             if not line.endswith(':'):
+                addr_text = self.address[temp]
+                temp += 1
                 bkpt = QtGui.QStandardItem()
                 bkpt.setCheckable(True)
                 bkpt.setCheckState(QtCore.Qt.CheckState.Unchecked)
-                addr = QtGui.QStandardItem(mapping_addr_line.get(line))
-                opcode = QtGui.QStandardItem(mapping_addr_mem.get(mapping_addr_line.get(line)))
+                bkpt.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
+                addr = QtGui.QStandardItem(addr_text)
+                opcode = QtGui.QStandardItem(mapping_addr_mem.get(addr_text))
                 assembly = QtGui.QStandardItem("    " + line)
             if line.endswith(':'):
-                bkpt = QtGui.QStandardItem(" ")
+                bkpt = QtGui.QStandardItem()
+                bkpt.setCheckable(False)
+                bkpt.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                bkpt.setFlags(bkpt.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 addr = QtGui.QStandardItem(" ")
                 opcode = QtGui.QStandardItem(" ")
                 assembly = QtGui.QStandardItem(line.upper())
-            bkpt.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
@@ -948,19 +1071,15 @@ class Ui_MainWindow(object):
         
     pc = 0
     instruction_size = 4
+    memory_current_line = []
+    data_labels = []
     address = []
     current_line_index = 0
     row = []
-    
+    stacked = []
     def Check(self):
-        if self.stackedCodeWidget.currentIndex() == 0:
-            QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
-            return
         global pc
         text = self.CodeEditText.toPlainText()
-        if not text:
-            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
-            return
         lines = text.split("\n")
         lines, _ = data.parse_data(lines)
         labels, lines = parse_labels(lines)
@@ -968,34 +1087,38 @@ class Ui_MainWindow(object):
         lines = [' '.join(item.split()) for item in lines if item.strip()]
         mapping = {key: value for key, value in zip(self.address, lines)}
         self.Code_BreakPoint()
-        while self.current_line_index < len(lines):
+        if self.current_line_index < len(lines):
+            if len(self.address) == None or self.current_line_index >= len(self.address):
+                return
             line = mapping.get(self.address[self.current_line_index])
             if line.strip() in self.bkpt:
-                break
+                return
             self.reset_backgroud_register()
             self.reset_highlight()
             pc_binary = self.address[self.current_line_index]
             self.pc_LineEdit.setText(pc_binary)
             if line.strip():
-                label, flag_B = check_branch(self, line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, line, self.address, self.memory_current_line, self.data_labels
+                reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, lines, line, self.address, self.memory_current_line, self.data_labels
                                                                                                       , self.model, self.model_2, self.model_4, self.model_8
-                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte)
+                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte
+                                                                                                      , self.stacked)
                 self.current_line_index += 1
-            elif not line.strip():
-                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
-                break
+            if flag_B == 2:
+                self.stacked = []
             if label in labels:
                 position = lines.index(labels[label][0])
                 self.current_line_index = position
             elif label in lines:
                 position = lines.index(label)
                 self.current_line_index = position
-            elif label != None:
-                QtWidgets.QMessageBox.critical(None, "Lỗi", "Không tìm thấy label: " + label + " trong chương trình")
-                break
             if self.current_line_index >= len(lines):
                 self.reset_highlight()
+                for row in range(1, self.model_code.rowCount()):
+                    item = self.model_code.item(row, 3)
+                    if item != None:
+                        item.setBackground(QtGui.QColor("#7fffd4"))
+                if self.thread.isRunning():
+                    self.worker.stop_run_code()
             else:
                 next_line = mapping.get(self.address[self.current_line_index])
                 self.highlight_next_line(next_line)
@@ -1016,13 +1139,6 @@ class Ui_MainWindow(object):
                 result_str_2 = format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
                 line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments is None and (flag_T or self.current_line_index == len(self.address)):
-                pass
-            elif flag_B:
-                pass
-            elif arguments is None:
-                QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + line + "]"+ " không hợp lệ")
-                break
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")
@@ -1039,13 +1155,6 @@ class Ui_MainWindow(object):
                 c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-        if self.current_line_index >= len(lines):
-            for row in range(1, self.model_code.rowCount()):
-                item = self.model_code.item(row, 3)
-                if item != None:
-                    item.setBackground(QtGui.QColor("#7fffd4"))
-    memory_current_line = []
-    data_labels = []
     def reset_highlight(self):
         for row in range(1, self.model_code.rowCount()):
             item = self.model_code.item(row, 3)
@@ -1057,6 +1166,7 @@ class Ui_MainWindow(object):
         text = self.CodeEditText.toPlainText()
         if not text:
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
+            self.Restart()
             return
         lines = text.split("\n")
         lines, _ = data.parse_data(lines)
@@ -1072,12 +1182,10 @@ class Ui_MainWindow(object):
     def check_next_line(self):
         if self.stackedCodeWidget.currentIndex() == 0:
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
+            self.Restart()
             return
         global current_line_index
         text = self.CodeEditText.toPlainText()
-        if not text:
-            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
-            return
         lines = text.split("\n")
         lines, _ = data.parse_data(lines)
         labels, lines = parse_labels(lines)
@@ -1090,11 +1198,13 @@ class Ui_MainWindow(object):
             self.pc_LineEdit.setText(pc_binary)
             current_line = lines[self.current_line_index]
             if current_line.strip():
-                label, flag_B = check_branch(self, current_line, self.address, lines)
-                reg, arguments, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, current_line, self.address, self.memory_current_line, self.data_labels
+                reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T = Assembly.check_assembly_line(self, lines, current_line, self.address, self.memory_current_line, self.data_labels
                                                                                                       , self.model, self.model_2, self.model_4, self.model_8
-                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte)
+                                                                                                      , self.model_byte, self.model_2_byte, self.model_4_byte, self.model_8_byte
+                                                                                                      , self.stacked)
                 self.current_line_index += 1
+            if flag_B == 2:
+                self.stacked = []
             if label in labels:
                 position = lines.index(labels[label][0])
                 self.current_line_index = position
@@ -1127,13 +1237,8 @@ class Ui_MainWindow(object):
                 result_str_2 = format(result_int_2, '08x')
                 line_edit_2.setText(result_str_2)
                 line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments is None and (flag_T or self.current_line_index == len(lines)):
+            elif arguments is None and (flag_T or self.current_line_index == len(lines) or flag_B):
                 pass
-            elif flag_B:
-                pass
-            elif arguments is None or flag_B == None:
-                QtWidgets.QMessageBox.critical(None, "Lỗi", "Lệnh " + "[" + current_line + "]"+ " không hợp lệ")
-                return
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")
@@ -1151,12 +1256,25 @@ class Ui_MainWindow(object):
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
 
+    def RunCode(self):
+        thread_connected = False
+        if self.stackedCodeWidget.currentIndex() == 0:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
+            self.Restart()
+            return
+        if not self.thread.isRunning():
+            if not thread_connected:
+                self.thread.started.connect(self.worker.start_run_code)
+                thread_connected = True
+            self.thread.start()
+    
     def Restart(self):
+        self.show_code_edit()
         self.address = []
         self.memory_current_line = []
-        self.show_code_edit()
         self.reset_backgroud_register()
         self.reset_highlight()
+        self.stacked = []
         self.r0_LineEdit.setText(format(0, '08x'))
         self.r1_LineEdit.setText(format(0, '08x'))
         self.r2_LineEdit.setText(format(0, '08x'))
@@ -1172,8 +1290,8 @@ class Ui_MainWindow(object):
         self.r12_LineEdit.setText(format(0, '08x'))
         self.sp_LineEdit.setText(format(0, '08x'))
         self.lr_LineEdit.setText(format(0, '08x'))
-        self.pc = 0
         self.pc_LineEdit.setText(format(0, '08x'))
+        self.pc = 0
         self.current_line_index = 0
         self.n_LineEdit.setText("0")
         self.z_LineEdit.setText("0")
@@ -1229,8 +1347,13 @@ class Ui_MainWindow(object):
                 QtWidgets.QMessageBox.information(None, "Success", f"Đã lưu file {file_name} thành công ")
             except Exception as e:
                 QtWidgets.QMessageBox.critical(None, "Error", f"Lưu file {file_path}\n{e} thất bại, vui lòng kiểm tra lại")
+                self.Restart()
         
     def import_file(self):
+        if self.stackedCodeWidget.currentIndex() == 1:
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng tắt Compile code")
+            self.Restart()
+            return
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Import File", "", "Assembly Files (*.s);;Text Files (*.txt)")
         if file_path:
             try:
@@ -1241,7 +1364,12 @@ class Ui_MainWindow(object):
                 QtWidgets.QMessageBox.information(None, "Success", f"Đã thêm file {file_name} thành công ")
             except Exception as e:
                 QtWidgets.QMessageBox.critical(None, "Error", f"Mở file {file_name}\n{e} thất bại, vui lòng kiểm tra lại")
-        
+                self.Restart()
+    
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        sys.exit(app.exec())
+                    
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

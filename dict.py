@@ -93,30 +93,28 @@ shift_memory_dict = {
     "rrx": '11'
 }
 
+def twos_complement_to_signed(hex_str):
+    decimal_value = int(hex_str, 16)
+    if decimal_value & (1 << (32 - 1)):
+        decimal_value -= 1 << 32
+    return decimal_value
+
 def is_special_or_digit(word):
-    # Kiểm tra xem từ có rỗng không
     if not word:
         return False
-
-    # Lấy ký tự đầu tiên của từ
     first_char = word[0]
-
-    # Kiểm tra nếu ký tự đầu tiên là số
     if first_char.isdigit():
         return True
-
-    # Kiểm tra nếu ký tự đầu tiên là ký tự đặc biệt
-    special_characters = string.punctuation  # Lấy tất cả các ký tự đặc biệt chuẩn
+    special_characters = string.punctuation
     if first_char in special_characters:
         return True
-
-    # Nếu không phải số hoặc ký tự đặc biệt
     return False
 
 def parse_labels(input_lines):
     labels = {}
     current_label = None
     remaining_lines = []
+    input_lines = [item for item in input_lines if item not in ["", None]]
     for line in input_lines:
         stripped_line = line.strip()
         result = is_special_or_digit(stripped_line)
@@ -572,47 +570,50 @@ def combine_hex(memory):
 def replace_memory(model, listAddr, listMem):
     replacement_dict = dict(zip(listAddr, listMem))
     max_row = model.rowCount() - 1
-    for row in range(1, model.rowCount()):
-        item_addr = model.item(row, 0)
-        if row != max_row:
-            item_addr_next = model.item(row + 1, 0)
-            addr_next = item_addr_next.text()
-        if item_addr:
-            addr = item_addr.text()
-        for address in listAddr:
-            text = QtGui.QStandardItem(replacement_dict[address])
-            if int(address, 16) == int(addr, 16):
-                model.setItem(row, 1, text)
-            if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
-                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                model.setItem(row, num, text)
-            if not addr_next and int(address, 16) > int(addr, 16):
-                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                model.setItem(row, num, text)
+    if len(listAddr) == len(listMem):
+        for row in range(1, model.rowCount()):
+            item_addr = model.item(row, 0)
+            if row != max_row:
+                item_addr_next = model.item(row + 1, 0)
+                addr_next = item_addr_next.text()
+            if item_addr:
+                addr = item_addr.text()
+            for address in listAddr:
+                text = QtGui.QStandardItem(replacement_dict[address])
+                text.setFlags(text.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+                if int(address, 16) == int(addr, 16):
+                    model.setItem(row, 1, text)
+                if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
+                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                    model.setItem(row, num, text)
+                if not addr_next and int(address, 16) > int(addr, 16):
+                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                    model.setItem(row, num, text)
                 
 def replace_memory_byte(model_byte, listAddr, listMem):
-    for i in range(len(listMem)):
-        listMem[i] = split_hex(listMem[i])
-    replacement_dict = dict(zip(listAddr, listMem))
-    max_row = model_byte.rowCount() - 1
-    for row in range(1, model_byte.rowCount()):
-        item_addr = model_byte.item(row, 0)
-        if row != max_row:
-            item_addr_next = model_byte.item(row + 1, 0)
-            addr_next = item_addr_next.text()
-        if item_addr:
-            addr = item_addr.text()
-        for address in listAddr:
-            text = QtGui.QStandardItem(replacement_dict[address])
-            if int(address, 16) == int(addr, 16):
-                model_byte.setItem(row, 1, text)
-            if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
-                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                model_byte.setItem(row, num, text)
-            if not addr_next and int(address, 16) > int(addr, 16):
-                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                model_byte.setItem(row, num, text)
-    for i in range(len(listMem)):
-        listMem[i] = combine_hex(listMem[i])
+    if len(listAddr) == len(listMem):
+        for i in range(len(listMem)):
+            listMem[i] = split_hex(listMem[i])
+        replacement_dict = dict(zip(listAddr, listMem))
+        max_row = model_byte.rowCount() - 1
+        for row in range(1, model_byte.rowCount()):
+            item_addr = model_byte.item(row, 0)
+            if row != max_row:
+                item_addr_next = model_byte.item(row + 1, 0)
+                addr_next = item_addr_next.text()
+            if item_addr:
+                addr = item_addr.text()
+            for address in listAddr:
+                text = QtGui.QStandardItem(replacement_dict[address])
+                if int(address, 16) == int(addr, 16):
+                    model_byte.setItem(row, 1, text)
+                if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
+                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                    model_byte.setItem(row, num, text)
+                if not addr_next and int(address, 16) > int(addr, 16):
+                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                    model_byte.setItem(row, num, text)
+        for i in range(len(listMem)):
+            listMem[i] = combine_hex(listMem[i])
     
     

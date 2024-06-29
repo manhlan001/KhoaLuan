@@ -34,5 +34,5 @@ done_sort:
    mov r8, #10
 
 .data
-array:  .word 5, 1, 4, 2, 8
-length: .word 5
+array:  .word 5, 1, 4, 2, 8, -7
+length: .word 6
