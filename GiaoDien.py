@@ -945,6 +945,7 @@ class Ui_MainWindow(object):
     
     bkpt = []
     def Code_BreakPoint(self):
+        self.bkpt = []
         for row in range(1, self.model_code.rowCount()):
             item_checkbox = self.model_code.item(row, 0)
             item_line = self.model_code.item(row, 3)
@@ -1092,6 +1093,8 @@ class Ui_MainWindow(object):
                 return
             line = mapping.get(self.address[self.current_line_index])
             if line.strip() in self.bkpt:
+                if self.thread.isRunning():
+                    self.worker.stop_run_code()
                 return
             self.reset_backgroud_register()
             self.reset_highlight()
@@ -1180,6 +1183,8 @@ class Ui_MainWindow(object):
             item.setBackground(QtGui.QColor("Yellow"))
             
     def check_next_line(self):
+        if self.thread.isRunning():
+            self.worker.stop_run_code()
         if self.stackedCodeWidget.currentIndex() == 0:
             QtWidgets.QMessageBox.critical(None, "Lỗi", "Vui lòng Compile code")
             self.Restart()
