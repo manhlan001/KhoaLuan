@@ -1,10 +1,11 @@
 import re
 import sys
+import os
 from dict import line_edit_dict, conditon_dict
 import dict
-import ctypes
 from encoder import Encoder, Encoder_12bit
 from decoder import Decoder
+from PyQt6 import QtCore, QtGui, QtWidgets 
 
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
@@ -18,6 +19,7 @@ SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
 regex_register = re.compile(r"r\d+$|lr")
 regex_const = re.compile(r"#-?\d+$")
+regex_const_hex = re.compile(r"^#0x[0-9a-fA-F]+$")
 
 def split_and_filter(line):
     parts = re.split(r',', line)
@@ -68,6 +70,7 @@ def check_memory(self, line, address, lines, data_labels):
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
     if match_instruction:
+        num_hex = ""
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
         match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
@@ -94,6 +97,10 @@ def check_memory(self, line, address, lines, data_labels):
                             clean_num = mem[1].lstrip('#')
                             num = int(clean_num)
                             shift = f"{num:05b}" + dict.shift_memory_dict.get(instruction_clean) + '0'
+                        elif regex_const_hex.match(mem[1]):
+                            clean_num = mem[1].lstrip('#')
+                            num = dict.twos_complement_to_signed(clean_num)
+                            shift = f"{num:05b}" + dict.shift_memory_dict.get(instruction_clean) + '0'
                         elif regex_register.match(mem[1]):
                             shift = dict.register_memory_dict.get(mem[1]) + '0' + dict.shift_memory_dict.get(instruction_clean) + '1'
                         else:
@@ -113,6 +120,12 @@ def check_memory(self, line, address, lines, data_labels):
                     if regex_const.match(item):
                         clean_num = item.lstrip('#')
                         num = int(clean_num)
+                        num_memory = dict.process_binary(num)
+                        Immediate_Operand = "1"
+                    elif regex_const_hex.match(item):
+                        clean_num = item.lstrip('#')
+                        num_hex = clean_num
+                        num = dict.twos_complement_to_signed(clean_num)
                         num_memory = dict.process_binary(num)
                         Immediate_Operand = "1"
                     elif regex_register.match(item):
@@ -149,7 +162,11 @@ def check_memory(self, line, address, lines, data_labels):
                 if Immediate_Operand == "0":
                     memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + Rm
                 elif Immediate_Operand == "1":
-                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + num_memory
+                    if num_memory:
+                        memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + num_memory
+                    else:
+                        QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num_hex + ") after fixup")
+                        sys.exit()
         else:
             return memory
         
@@ -162,12 +179,19 @@ def check_memory(self, line, address, lines, data_labels):
             condition = match_condition.group(0)
             instruction = re.sub(condition, "", instruction)
         if not instruction:
+            num_hex = ""
             shift = "00000000"
             for i in range(len(mem)):
                 item = mem[i]
                 if regex_const.match(item):
                     clean_num = item.lstrip('#')
                     num = int(clean_num)
+                    num_memory = dict.process_binary(num)
+                    Immediate_Operand = "1"
+                if regex_const_hex.match(item):
+                    clean_num = item.lstrip('#')
+                    num_hex = clean_num
+                    num = dict.twos_complement_to_signed(clean_num)
                     num_memory = dict.process_binary(num)
                     Immediate_Operand = "1"
                 elif regex_register.match(item):
@@ -190,9 +214,6 @@ def check_memory(self, line, address, lines, data_labels):
                             return memory
                 else:
                     return memory
-            
-            if num_memory == None:
-                return memory
                     
             Rd = dict.register_memory_dict.get(reg)    
             Rn = "0000"    
@@ -206,7 +227,11 @@ def check_memory(self, line, address, lines, data_labels):
             if Immediate_Operand == "0":
                 memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + shift + dict.register_memory_dict.get(Rm)
             elif Immediate_Operand == "1":
-                memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + num_memory
+                if num_memory:
+                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + num_memory
+                else:
+                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num_hex + ") after fixup")
+                    sys.exit()
         else:
             return memory
             
@@ -284,6 +309,15 @@ def check_memory(self, line, address, lines, data_labels):
                         elif num < 0:
                             U = "0"
                         num_memory = Encoder_12bit(num)
+                    elif regex_const_hex.match(mem[1]):
+                        Immediate_Operand == "0"
+                        clean_num = mem[1].lstrip('#')
+                        num = dict.twos_complement_to_signed(clean_num)
+                        if num >= 0:
+                            U = "1"
+                        elif num < 0:
+                            U = "0"
+                        num_memory = Encoder_12bit(num)
                     elif regex_register.match(mem[1]):
                         Immediate_Operand == "1"
                         U = "1"
@@ -316,6 +350,15 @@ def check_memory(self, line, address, lines, data_labels):
                             elif num < 0:
                                 U = "0"
                             num_memory = Encoder_12bit(num)
+                        elif regex_const_hex.match(mem[1]):
+                            Immediate_Operand == "0"
+                            clean_num = mem[1].lstrip('#')
+                            num = dict.twos_complement_to_signed(clean_num)
+                            if num >= 0:
+                                U = "1"
+                            elif num < 0:
+                                U = "0"
+                            num_memory = Encoder_12bit(num)
                         elif regex_register.match(mem[1]):
                             Immediate_Operand == "1"
                             Rm = dict.register_memory_dict.get(mem[1])
@@ -328,6 +371,15 @@ def check_memory(self, line, address, lines, data_labels):
                             Immediate_Operand == "0"
                             clean_num = mem[1].lstrip('#')
                             num = int(clean_num)
+                            if num >= 0:
+                                U = "1"
+                            elif num < 0:
+                                U = "0"
+                            num_memory = Encoder_12bit(num)
+                        elif regex_const_hex.match(mem[1]):
+                            Immediate_Operand == "0"
+                            clean_num = mem[1].lstrip('#')
+                            num = dict.twos_complement_to_signed(clean_num)
                             if num >= 0:
                                 U = "1"
                             elif num < 0:
@@ -352,7 +404,11 @@ def check_memory(self, line, address, lines, data_labels):
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
             if Immediate_Operand == "0":
-                memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
+                if num_memory:
+                    memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
+                else:
+                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num + ") after fixup")
+                    return memory
             elif Immediate_Operand == "1":
                 memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
                 
@@ -381,6 +437,11 @@ def check_memory(self, line, address, lines, data_labels):
                                         num = int(clean_num)
                                         shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
                                         break
+                                    elif regex_const_hex.match(mem[i + 2]):
+                                        clean_num = mem[i + 2].lstrip('#')
+                                        num = dict.twos_complement_to_signed(clean_num)
+                                        shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                                        break    
                                     elif regex_register.match(mem[i + 2]):
                                         shift = dict.register_memory_dict.get(mem[i + 2]) + '0' + dict.shift_memory_dict.get(mem[i + 1]) + '1'
                                         break
@@ -434,6 +495,11 @@ def check_memory(self, line, address, lines, data_labels):
                                 if regex_const.match(mem[i + 2]):
                                     clean_num = mem[i + 2].lstrip('#')
                                     num = int(clean_num)
+                                    shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                                    break
+                                elif regex_const_hex.match(mem[i + 2]):
+                                    clean_num = mem[i + 2].lstrip('#')
+                                    num = dict.twos_complement_to_signed(clean_num)
                                     shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
                                     break
                                 elif regex_register.match(mem[i + 2]):

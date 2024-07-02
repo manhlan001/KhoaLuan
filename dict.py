@@ -615,5 +615,64 @@ def replace_memory_byte(model_byte, listAddr, listMem):
                     model_byte.setItem(row, num, text)
         for i in range(len(listMem)):
             listMem[i] = combine_hex(listMem[i])
-    
-    
+            
+def replace_one_memory(model, addr_input, mem_input):
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model.item(row, 1).setText(mem_input)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int(((search_value - twos_complement_to_signed(addr)) / 4) + 1)
+            model.item(row, num).setText(mem_input)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int(((search_value - twos_complement_to_signed(addr, 16)) / 4) + 1)
+            model.item(row, num).setText(mem_input)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return
+        
+def replace_one_memory_byte(model, addr_input, mem_input):
+    mem_input = split_hex(mem_input)
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model.item(row, 1).setText(mem_input)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model.item(row, num).setText(mem_input)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model.item(row, num).setText(mem_input)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return

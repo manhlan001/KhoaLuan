@@ -19,8 +19,6 @@ from encoder import Encoder
 from decoder import Decoder
 COLON_REGEX = re.compile(r"\:")
 
-from PyQt6 import QtWidgets, QtGui, QtCore
-
 class RunCode(QtCore.QObject):
     finished = QtCore.pyqtSignal()
     progress = QtCore.pyqtSignal()
@@ -114,7 +112,7 @@ class CustomTableView(QtWidgets.QTableView):
                 x = self.columnViewportPosition(column) + self.columnWidth(column)
                 painter.drawLine(x, 0, x, self.viewport().height())
 
-class Ui_MainWindow(object):
+class Ui_MainWindow(object): #tôi muốn dùng hàm trong class này ở file khác thì nên làm sao?
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1080, 720)
@@ -767,14 +765,17 @@ class Ui_MainWindow(object):
                         addr = item_addr.text()
                     if search_value == int(addr, 16):
                         model.item(row, 1).setBackground(QtGui.QColor("yellow"))
+                        self.Addrr_Mem_View.scrollTo(model.index(row, 1))
                         break
                     if addr_next and search_value > int(addr, 16) and search_value < int(addr_next, 16):
                         num = int((search_value - int(addr, 16)) / 4) + 1
                         model.item(row, num).setBackground(QtGui.QColor("yellow"))
+                        self.Addrr_Mem_View.scrollTo(model.index(row, num))
                         break
                     if not addr_next and search_value > int(addr, 16):
                         num = int((search_value - int(addr, 16)) / 4) + 1
                         model.item(row, num).setBackground(QtGui.QColor("yellow"))
+                        self.Addrr_Mem_View.scrollTo(model.index(row, num))
                         break
                 if not found:
                     last_item_value = int(model.item(model.rowCount() - 1, 0).text(), 16)
@@ -1091,7 +1092,7 @@ class Ui_MainWindow(object):
         if self.current_line_index < len(lines):
             if len(self.address) == None or self.current_line_index >= len(self.address):
                 return
-            line = mapping.get(self.address[self.current_line_index])
+            line = lines[self.current_line_index]
             if line.strip() in self.bkpt:
                 if self.thread.isRunning():
                     self.worker.stop_run_code()
@@ -1123,25 +1124,15 @@ class Ui_MainWindow(object):
                 if self.thread.isRunning():
                     self.worker.stop_run_code()
             else:
-                next_line = mapping.get(self.address[self.current_line_index])
-                self.highlight_next_line(next_line)
-            if arguments and len(reg) == 1 and len(arguments) == 1:
-                line_edit = line_edit_dict.get(reg[0])
-                result_int = int(arguments[0], 2)
-                result_str = format(result_int, '08x')
-                line_edit.setText(result_str)
-                line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments and len(reg) == 2 and len(arguments) == 2:
-                line_edit_1 = line_edit_dict.get(reg[0])
-                result_int_1 = int(arguments[0], 2)
-                result_str_1 = format(result_int_1, '08x')
-                line_edit_1.setText(result_str_1)
-                line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-                line_edit_2 = line_edit_dict.get(reg[1])
-                result_int_2 = int(arguments[1], 2)
-                result_str_2 = format(result_int_2, '08x')
-                line_edit_2.setText(result_str_2)
-                line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+                pc_binary = self.address[self.current_line_index]
+                self.highlight_line(pc_binary)
+            if arguments and len(reg) == len(arguments):
+                for i in range(len(arguments)):
+                    line_edit = line_edit_dict.get(reg[i])
+                    result_int = int(arguments[i], 2)
+                    result_str = format(result_int, '08x')
+                    line_edit.setText(result_str)
+                    line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")
@@ -1163,24 +1154,18 @@ class Ui_MainWindow(object):
             item = self.model_code.item(row, 3)
             if item != None:
                 item.setBackground(QtGui.QColor("white"))
-    def highlight_next_line(self, line):
+    def highlight_line(self, pc_binary):
         self.reset_highlight()
-        row_count = self.model_code.rowCount()
-        text = self.CodeEditText.toPlainText()
-        if not text:
-            QtWidgets.QMessageBox.critical(None, "Lỗi", "Không có câu lệnh nào")
-            self.Restart()
-            return
-        lines = text.split("\n")
-        lines, _ = data.parse_data(lines)
-        lines = [item for item in lines if item not in [" ", None]]
-        lines = [' '.join(item.split()) for item in lines if item.strip()]
-        self.row = [i for i in range(1, row_count)]
-        highlight = {key: value for key, value in zip(lines, self.row)}
-        if line in lines:
-            index = highlight.get(line)
-            item = self.model_code.item(index, 3)
-            item.setBackground(QtGui.QColor("Yellow"))
+        search_value  = int(pc_binary, 16)
+        for row in range(1, self.model_code.rowCount()):
+            addr_line = self.model_code.item(row, 1)
+            addr_line_text = addr_line.text()
+            try:
+                if search_value == int(addr_line_text, 16):
+                    item = self.model_code.item(row, 3)
+                    item.setBackground(QtGui.QColor("Yellow"))
+            except ValueError:
+                pass
             
     def check_next_line(self):
         if self.thread.isRunning():
@@ -1223,8 +1208,8 @@ class Ui_MainWindow(object):
                     if item != None:
                         item.setBackground(QtGui.QColor("#7fffd4"))
             else:
-                next_line = mapping.get(self.address[self.current_line_index])
-                self.highlight_next_line(next_line)
+                pc_binary = self.address[self.current_line_index]
+                self.highlight_line(pc_binary)
             if arguments and len(reg) == 1 and len(arguments) == 1:
                 line_edit = line_edit_dict.get(reg[0])
                 result_int = int(arguments[0], 2)
@@ -1373,6 +1358,7 @@ class Ui_MainWindow(object):
     
     def closeEvent(self, event):
         super().closeEvent(event)
+        self.worker.stop_run_code()
         sys.exit(app.exec())
                     
 if __name__ == "__main__":

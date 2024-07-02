@@ -2,14 +2,17 @@ import re
 import sys
 import Assembly
 import string
-import dict
 from encoder import Encoder
 from decoder import Decoder
+import dict
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 VALID_DATA = ".data"
 VALID_SIZE = ".word"
+VALID_SPACE_MEMORY = re.compile(r"(.space|.skip|.zero)", re.IGNORECASE)
 
 regex_const = re.compile(r"-?\d+$")
+regex_const_hex = re.compile(r"^0x[0-9a-fA-F]+$")
 
 def split_and_filter(line):
     parts = re.split(r',', line)
@@ -62,6 +65,10 @@ def process_data(data_lines, address):
                     parts[0] = parts[0].strip(':')
                     label_data.append(parts[0])
                     label_data.append(address_data_base_str)
+                elif parts[0].endswith(':') and not result and VALID_SPACE_MEMORY.match(parts[1]):
+                    parts[0] = parts[0].strip(':')
+                    label_data.append(parts[0])
+                    label_data.append(address_data_base_str)
                 else:
                     return None, None, None
         for line in data_lines:
@@ -84,6 +91,61 @@ def process_data(data_lines, address):
                             num_str = format(num, '08x')
                             temp.append(num_str)
                             data_address.append(address_data_base_str)
+                        elif regex_const_hex.match(part):
+                            num = int(part, 16)
+                            num_str = format(num, '08x')
+                            temp.append(num_str)
+                            data_address.append(address_data_base_str)
+                elif parts[0].endswith(':') and not result and VALID_SPACE_MEMORY.match(parts[1]):
+                    parts[0] = parts[0].strip(':')
+                    parts = parts[2:]
+                    address_data_base += 4
+                    address_data_base_str = format(address_data_base, '08x')
+                    data_memory.append(address_data_base_str)
+                    if len(parts) == 1:
+                        try:
+                            size_in_bytes = int(parts[0])
+                        except ValueError:
+                            QtWidgets.QMessageBox.critical(None, "Lỗi", ".space specifies non-absolute value")
+                            return None, None, None
+                        if size_in_bytes % 4 == 0:
+                            num_addr = size_in_bytes // 4
+                        else:
+                            num_addr = size_in_bytes // 4 + 1
+                        for i in range(num_addr):
+                            num_str = format(0, '08x')
+                            temp.append(num_str)
+                            data_address.append(address_data_base_str)
+                            address_data_base += 4
+                            address_data_base_str = format(address_data_base, '08x')
+                    elif len(parts) == 2:
+                        try:
+                            if regex_const.match(parts[0]):
+                                size_in_bytes = int(parts[0])
+                                fill_value = int(parts[1])
+                            elif regex_const_hex.match(parts[0]):
+                                size_in_bytes = dict.twos_complement_to_signed(parts[0])
+                                fill_value = dict.twos_complement_to_signed(parts[1])
+                        except ValueError:
+                            QtWidgets.QMessageBox.critical(None, "Lỗi", ".space specifies non-absolute value")
+                            return None, None, None
+                        if size_in_bytes % 4 == 0:
+                            num_addr = size_in_bytes // 4
+                        else:
+                            num_addr = size_in_bytes // 4 + 1
+                        for i in range(num_addr):
+                            if fill_value >= -256 and fill_value <= 255:
+                                num_str = format(fill_value, '02x')
+                                fill_value_str = num_str + num_str + num_str + num_str
+                                temp.append(fill_value_str)
+                            else:
+                                fill_value_str = format(0, '08x')
+                                temp.append(fill_value_str)
+                            data_address.append(address_data_base_str)
+                            address_data_base += 4
+                            address_data_base_str = format(address_data_base, '08x')
+                    else:
+                        return None, None, None
                 else:
                     return None, None, None
             else:
@@ -92,5 +154,3 @@ def process_data(data_lines, address):
         return label_data, data_address, data_memory
     else:
         return None, None, None
-
-            

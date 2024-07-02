@@ -1,0 +1,28 @@
+ldr r0, =n
+ldr r1, [r0]
+
+ldr r2, =result
+
+mov r3, #0
+str r3, [r2], #4
+mov r4, #1
+str r4, [r2], #4
+
+subs r1, r1, #2
+beq end_program
+
+fibonacci_loop:
+    add r5, r3, r4
+    str r5, [r2], #4
+    mov r3, r4
+    mov r4, r5
+
+    subs r1, r1, #1
+    bne fibonacci_loop
+
+end_program:
+    mov r8, #10
+
+.data
+n:      .word 10
+result: .space 40

@@ -22,6 +22,7 @@ FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
 COLON_REGEX = re.compile(r"\:")
 regex_register = re.compile(r"r\d+$|lr")
 regex_const = re.compile(r"#-?\d+$")
+regex_const_hex = re.compile(r"^#0x[0-9a-fA-F]+$")
 
 def split_and_filter(line):
     parts = re.split(r',', line)
@@ -222,6 +223,11 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     num = int(clean_num)
                     num_string = Encoder(num)
                     temporary.append(num_string)
+                elif regex_const_hex.match(item):
+                    clean_num = item.lstrip('#')
+                    num = dict.twos_complement_to_signed(clean_num)
+                    num_string = Encoder(num)
+                    temporary.append(num_string)
                 elif regex_register.match(item):
                     line_edit = line_edit_dict.get(item)
                     binary_str = line_edit.text()
@@ -313,6 +319,11 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 if regex_const.match(item):
                     clean_num = item.lstrip('#')
                     num = int(clean_num)
+                    num_string = Encoder(num)
+                    binary_str_2 = num_string
+                elif regex_const_hex.match(item):
+                    clean_num = item.lstrip('#')
+                    num = dict.twos_complement_to_signed(clean_num)
                     num_string = Encoder(num)
                     binary_str_2 = num_string
                 elif regex_register.match(item):
@@ -1149,27 +1160,27 @@ def SMLS(temporary, reg, line):
 def LDR(hex_str, address, memory):
     mapping = {key: value for key, value in zip(address, memory)}
     result = mapping.get(hex_str)
-    result_int = int(result, 16)
+    result_int = dict.twos_complement_to_signed(result)
     result = Encoder(result_int)
     if result == None:
         result = f"{0:032b}"
     return result
     
 def STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte):
-    mapping = {key: value for key, value in zip(address, memory)}
-    result = mapping.get(hex_str)
-    if not result:
-        QtWidgets.QMessageBox.critical(None, "Lỗi", "Invalid address input for STR")
-        return
-    position = memory.index(result)
     line_edit = line_edit_dict.get(reg[0])
-    binary_str = line_edit.text()
-    memory[position] = binary_str
-    dict.replace_memory(model, address, memory)
-    dict.replace_memory(model_2, address, memory)
-    dict.replace_memory(model_4, address, memory)
-    dict.replace_memory(model_8, address, memory)
-    dict.replace_memory_byte(model_byte, address, memory)
-    dict.replace_memory_byte(model_2_byte, address, memory)
-    dict.replace_memory_byte(model_4_byte, address, memory)
-    dict.replace_memory_byte(model_8_byte, address, memory)
+    mem_replace = line_edit.text()
+    mapping = {key: value for key, value in zip(address, memory)}
+    try:
+        result = mapping.get(hex_str)
+        position = memory.index(result)
+        memory[position] = mem_replace
+    except ValueError:
+        pass
+    dict.replace_one_memory(model, hex_str, mem_replace)
+    dict.replace_one_memory(model_2, hex_str, mem_replace)
+    dict.replace_one_memory(model_4, hex_str, mem_replace)
+    dict.replace_one_memory(model_8, hex_str, mem_replace)
+    dict.replace_one_memory_byte(model_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte(model_2_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte(model_4_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte(model_8_byte, hex_str, mem_replace)
