@@ -36,3 +36,5 @@ done_sort:
 .data
 array:  .word 5, 1, 4, 2, 8, -7
 length: .word 6
+
+#Đưa về bubble sort cơ bản

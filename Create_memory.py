@@ -188,7 +188,7 @@ def check_memory(self, line, address, lines, data_labels):
                     num = int(clean_num)
                     num_memory = dict.process_binary(num)
                     Immediate_Operand = "1"
-                if regex_const_hex.match(item):
+                elif regex_const_hex.match(item):
                     clean_num = item.lstrip('#')
                     num_hex = clean_num
                     num = dict.twos_complement_to_signed(clean_num)

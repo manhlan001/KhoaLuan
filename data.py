@@ -116,8 +116,9 @@ def process_data(data_lines, address):
                             num_str = format(0, '08x')
                             temp.append(num_str)
                             data_address.append(address_data_base_str)
-                            address_data_base += 4
-                            address_data_base_str = format(address_data_base, '08x')
+                            if i < num_addr - 1:
+                                address_data_base += 4
+                                address_data_base_str = format(address_data_base, '08x')
                     elif len(parts) == 2:
                         try:
                             if regex_const.match(parts[0]):
@@ -142,8 +143,9 @@ def process_data(data_lines, address):
                                 fill_value_str = format(0, '08x')
                                 temp.append(fill_value_str)
                             data_address.append(address_data_base_str)
-                            address_data_base += 4
-                            address_data_base_str = format(address_data_base, '08x')
+                            if i < num_addr - 1:
+                                address_data_base += 4
+                                address_data_base_str = format(address_data_base, '08x')
                     else:
                         return None, None, None
                 else:
