@@ -13,7 +13,7 @@ VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(MOV|MVN|AND|BIC|ORR|ORN|EOR)", re.IGN
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB = re.compile(r"(ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
-VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR)", re.IGNORECASE)
+VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
@@ -391,7 +391,6 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         binary_str = ""
         instruction_clean = match_instruction_single_data_tranfer.group(0)
         instruction = re.sub(match_instruction_single_data_tranfer.group(0), "", instruction)
-        
         match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
         if match_condition:
             condition = match_condition.group(0)
@@ -399,10 +398,11 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             instruction = re.sub(condition, "", instruction)
         elif not match_condition:
             c = dict.check_condition(condition)
-        
         regex_bracket_1 = re.compile(r"\[", re.IGNORECASE)
         regex_bracket_2 = re.compile(r"\]", re.IGNORECASE)
         temporary = []
+        if instruction.lower() == "b":
+            instruction_clean = instruction_clean + "b"
         if len(mem) == 1:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
@@ -426,7 +426,10 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
                
             if instruction_clean.lower() == "ldr":
-                result = LDR(hex_str, address, memory)
+                result = LDR(hex_str, model)
+                arguments.append(result)
+            if instruction_clean.lower() == "ldrb":
+                result = LDR_B(hex_str, model_byte)
                 arguments.append(result)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
@@ -512,7 +515,12 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
             if instruction_clean.lower() == "ldr":
-                result = LDR(hex_str, address, memory)
+                result = LDR(hex_str, model)
+                arguments.append(result)
+                if num_result_str:
+                    arguments.append(num_result_str)
+            if instruction_clean.lower() == "ldrb":
+                result = LDR_B(hex_str, model_byte)
                 arguments.append(result)
                 if num_result_str:
                     arguments.append(num_result_str)
@@ -584,6 +592,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 
                 num_result = num_1 + num_2
                 num_result_str = Encoder(num_result)
+                hex_str = format(num_result, '08x')
             
             elif bracket_1 and not bracket_2:
                 t = None
@@ -658,18 +667,22 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 num_2 = Decoder(binary_str_reg[0])
                 num_result = num_1 + num_2
                 num_result_str = Encoder(num_result)
+                hex_str = format(num_result, '08x')
                     
             elif not bracket_1:
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
             if instruction_clean.lower() == "ldr":
-                result = LDR(hex_str, address, memory)
+                result = LDR(hex_str, model)
                 arguments.append(result)
                 if num_result_str:
                     arguments.append(num_result_str)
-            
+            if instruction_clean.lower() == "ldrb":
+                result = LDR_B(hex_str, model_byte)
+                arguments.append(result)
+                if num_result_str:
+                    arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
-                hex_str = num_result_str
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
                 if(len(reg) == 1):
@@ -1157,9 +1170,16 @@ def SMLS(temporary, reg, line):
     result.append(upper_32_str)
     return result
 
-def LDR(hex_str, address, memory):
-    mapping = {key: value for key, value in zip(address, memory)}
-    result = mapping.get(hex_str)
+def LDR(hex_str, model):
+    result = dict.find_one_memory(model, hex_str)
+    result_int = dict.twos_complement_to_signed(result)
+    result = Encoder(result_int)
+    if result == None:
+        result = f"{0:032b}"
+    return result
+
+def LDR_B(hex_str, model_byte):
+    result = dict.find_one_memory_in_byte(model_byte, hex_str)
     result_int = dict.twos_complement_to_signed(result)
     result = Encoder(result_int)
     if result == None:

@@ -10,7 +10,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
-VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR)", re.IGNORECASE)
+VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
@@ -250,6 +250,8 @@ def check_memory(self, line, address, lines, data_labels):
         if match_condition:
             condition = match_condition.group(0)
             instruction = re.sub(condition, "", instruction)
+        if instruction.lower() == "b":
+            instruction_clean = instruction_clean + "b"
         regex_bracket_1 = re.compile(r"\[", re.IGNORECASE)
         regex_bracket_2 = re.compile(r"\]", re.IGNORECASE)
         if len(mem) == 1:
@@ -279,12 +281,20 @@ def check_memory(self, line, address, lines, data_labels):
             
             if instruction_clean.lower() == "ldr":
                 L = "1"
+                B = "0"
             if instruction_clean.lower() == "str":
                 L = "0"
+                B = "0"
+            if instruction_clean.lower() == "ldrb":
+                L = "1"
+                B = "1"
+            if instruction_clean.lower() == "strb":
+                L = "0"
+                B = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rm = "0000"
             P = U = "1"
-            B = W = "0"
+            W = "0"
             if Immediate_Operand == "0":
                 memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
             elif Immediate_Operand == "1":
@@ -297,7 +307,6 @@ def check_memory(self, line, address, lines, data_labels):
                 mem[0] = mem[0].strip("[]")
                 W = "1"
                 P = "0"
-                B = "0"
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
                     if regex_const.match(mem[1]):
@@ -328,7 +337,6 @@ def check_memory(self, line, address, lines, data_labels):
             elif bracket_1 and not bracket_2:
                 mem[0] = mem[0].strip("[")
                 P = "1"
-                B = "0"
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
                 elif not regex_register.match(mem[0]):
@@ -399,8 +407,16 @@ def check_memory(self, line, address, lines, data_labels):
             
             if instruction_clean.lower() == "ldr":
                 L = "1"
+                B = "0"
             if instruction_clean.lower() == "str":
                 L = "0"
+                B = "0"
+            if instruction_clean.lower() == "ldrb":
+                L = "1"
+                B = "1"
+            if instruction_clean.lower() == "strb":
+                L = "0"
+                B = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
             if Immediate_Operand == "0":
@@ -418,7 +434,6 @@ def check_memory(self, line, address, lines, data_labels):
             if bracket_1 and bracket_2:
                 mem[0] = mem[0].strip("[]")
                 P = "0"
-                B = "0"
                 reg.append(mem[0])
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
@@ -453,7 +468,6 @@ def check_memory(self, line, address, lines, data_labels):
             elif bracket_1 and not bracket_2:
                 mem[0] = mem[0].strip("[")
                 P = "1"
-                B = "0"
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
                 elif not regex_register.match(mem[0]):
@@ -511,8 +525,16 @@ def check_memory(self, line, address, lines, data_labels):
                 return memory
             if instruction_clean.lower() == "ldr":
                 L = "1"
+                B = "0"
             if instruction_clean.lower() == "str":
                 L = "0"
+                B = "0"
+            if instruction_clean.lower() == "ldrb":
+                L = "1"
+                B = "1"
+            if instruction_clean.lower() == "strb":
+                L = "0"
+                B = "1"
             U = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
@@ -547,7 +569,6 @@ def check_memory(self, line, address, lines, data_labels):
             instruction = instruction.lstrip(match_flag.group(0))
             flag = "1"
         if not instruction:
-            print(mem)
             if l == 1 and len(mem) == 3:
                 reg_memory.append(mem[0])
                 mem = mem[1:]

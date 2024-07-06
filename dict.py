@@ -527,33 +527,33 @@ def process_binary(num):
     binary_str = Encoder(num)
     if len(binary_str) != 32:
         return None
-    
     positions = find_bit_positions(binary_str)
     num_ones = len(positions)
-    
     if int(binary_str, 2) > 255 and (31 in positions or 30 in positions):
         return None
-    
     if num_ones == 0:
         rotation = 0
     elif num_ones == 1:
         rotation = determine_rotation_for_single_bit(positions)
     elif num_ones > 1:
         rotation = determine_rotation_for_multiple_bits(positions)
-        
     if rotation == None:
         return None
-
     rotated_str = binary_str[-rotation:] + binary_str[:-rotation]
     last_8_bits = rotated_str[-8:]
     rotation_bits = format(15 - (rotation // 2), '04b')
-    
     if int(binary_str, 2) < 256:
         result = "0000" + binary_str[-8:]
         return result
-    
     result = rotation_bits + last_8_bits
     return result
+
+def ascii_memory(string, group_size=4):
+    hex_codes = [format(ord(c), 'x') for c in string]
+    while len(hex_codes) % group_size != 0:
+        hex_codes.append('00')
+    ascii_memory = [''.join(hex_codes[i:i + group_size][::-1]) for i in range(0, len(hex_codes), group_size)]
+    return ascii_memory
 
 def split_hex(hex_str):
     bytes_list = [f"{hex_str[i:i+2]}" for i in range(0, len(hex_str), 2)]
@@ -615,7 +615,61 @@ def replace_memory_byte(model_byte, listAddr, listMem):
                     model_byte.setItem(row, num, text)
         for i in range(len(listMem)):
             listMem[i] = combine_hex(listMem[i])
-            
+
+def find_one_memory(model, addr_input):
+    mem = ""
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            mem = model.item(row, 1).text()
+            found = True
+            return mem
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return mem
+        
+def find_one_memory_in_byte(model_byte, addr_input):
+    mem = ""
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    for row in range(1, model_byte.rowCount()):
+        item_addr = model_byte.item(row, 0)
+        if item_addr:
+            addr = item_addr.text()
+        if search_value - twos_complement_to_signed(addr) == 0:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[0]
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 1:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[1]
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 2:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[2]
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 3:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[3]
+            found = True
+            return mem_out
+    if not found:
+        last_item_value = twos_complement_to_signed(model_byte.item(model_byte.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return mem
+        
 def replace_one_memory(model, addr_input, mem_input):
     found = False
     search_value  = twos_complement_to_signed(addr_input)

@@ -1,6 +1,4 @@
-import re
-import dict
-
-num = 10
-for i in range(num):
-   print(i)
+str = "ab cd ef 12"
+str = str.split()
+str.reverse()
+print(str)

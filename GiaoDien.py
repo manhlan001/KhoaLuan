@@ -112,7 +112,7 @@ class CustomTableView(QtWidgets.QTableView):
                 x = self.columnViewportPosition(column) + self.columnWidth(column)
                 painter.drawLine(x, 0, x, self.viewport().height())
 
-class Ui_MainWindow(object): #tôi muốn dùng hàm trong class này ở file khác thì nên làm sao?
+class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1080, 720)
