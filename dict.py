@@ -570,51 +570,49 @@ def combine_hex(memory):
 def replace_memory(model, listAddr, listMem):
     replacement_dict = dict(zip(listAddr, listMem))
     max_row = model.rowCount() - 1
-    if len(listAddr) == len(listMem):
-        for row in range(1, model.rowCount()):
-            item_addr = model.item(row, 0)
-            if row != max_row:
-                item_addr_next = model.item(row + 1, 0)
-                addr_next = item_addr_next.text()
-            if item_addr:
-                addr = item_addr.text()
-            for address in listAddr:
-                text = QtGui.QStandardItem(replacement_dict[address])
-                text.setFlags(text.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-                if int(address, 16) == int(addr, 16):
-                    model.setItem(row, 1, text)
-                if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
-                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                    model.setItem(row, num, text)
-                if not addr_next and int(address, 16) > int(addr, 16):
-                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                    model.setItem(row, num, text)
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        for address in listAddr:
+            text = QtGui.QStandardItem(replacement_dict[address])
+            text.setFlags(text.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            if int(address, 16) == int(addr, 16):
+                model.setItem(row, 1, text)
+            if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
+                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                model.setItem(row, num, text)
+            if not addr_next and int(address, 16) > int(addr, 16):
+                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                model.setItem(row, num, text)
                 
 def replace_memory_byte(model_byte, listAddr, listMem):
-    if len(listAddr) == len(listMem):
-        for i in range(len(listMem)):
-            listMem[i] = split_hex(listMem[i])
-        replacement_dict = dict(zip(listAddr, listMem))
-        max_row = model_byte.rowCount() - 1
-        for row in range(1, model_byte.rowCount()):
-            item_addr = model_byte.item(row, 0)
-            if row != max_row:
-                item_addr_next = model_byte.item(row + 1, 0)
-                addr_next = item_addr_next.text()
-            if item_addr:
-                addr = item_addr.text()
-            for address in listAddr:
-                text = QtGui.QStandardItem(replacement_dict[address])
-                if int(address, 16) == int(addr, 16):
-                    model_byte.setItem(row, 1, text)
-                if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
-                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                    model_byte.setItem(row, num, text)
-                if not addr_next and int(address, 16) > int(addr, 16):
-                    num = int((int(address, 16) - int(addr, 16)) / 4) + 1
-                    model_byte.setItem(row, num, text)
-        for i in range(len(listMem)):
-            listMem[i] = combine_hex(listMem[i])
+    for i in range(len(listMem)):
+        listMem[i] = split_hex(listMem[i])
+    replacement_dict = dict(zip(listAddr, listMem))
+    max_row = model_byte.rowCount() - 1
+    for row in range(1, model_byte.rowCount()):
+        item_addr = model_byte.item(row, 0)
+        if row != max_row:
+            item_addr_next = model_byte.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        for address in listAddr:
+            text = QtGui.QStandardItem(replacement_dict[address])
+            if int(address, 16) == int(addr, 16):
+                model_byte.setItem(row, 1, text)
+            if addr_next and int(address, 16) > int(addr, 16) and int(address, 16) < int(addr_next, 16):
+                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                model_byte.setItem(row, num, text)
+            if not addr_next and int(address, 16) > int(addr, 16):
+                num = int((int(address, 16) - int(addr, 16)) / 4) + 1
+                model_byte.setItem(row, num, text)
+    for i in range(len(listMem)):
+        listMem[i] = combine_hex(listMem[i])
 
 def find_one_memory(model, addr_input):
     mem = ""
@@ -724,6 +722,122 @@ def replace_one_memory_byte(model, addr_input, mem_input):
         if not addr_next and search_value > twos_complement_to_signed(addr):
             num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
             model.item(row, num).setText(mem_input)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return
+        
+def replace_one_memory_in_byte(model, addr_input, mem_input):
+    mem_input = split_hex(mem_input)
+    mem_input = mem_input.split()
+    mem_input_byte = mem_input[0]
+    num_addr = int(addr_input, 16)
+    surplus = num_addr % 4
+    num_addr = num_addr - surplus
+    addr_input = format(num_addr, "08x")
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, 1).setText(model_text)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return
+        
+def replace_one_memory_byte_in_byte(model, addr_input, mem_input):
+    mem_input = split_hex(mem_input)
+    mem_input = mem_input.split()
+    mem_input_byte = mem_input[0]
+    num_addr = int(addr_input, 16)
+    surplus = num_addr % 4
+    num_addr = num_addr - surplus
+    addr_input = format(num_addr, "08x")
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, 1).setText(model_text)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, num).setText(model_text)
             found = True
             return
     if not found:

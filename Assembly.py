@@ -11,6 +11,7 @@ from decoder import Decoder
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|EOR|ADD|ADC|SUB|SBC|RSB|RSC)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(MOV|MVN|AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
+VALID_COMMAND_REGEX_BIT_OP_SPECIAL = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB = re.compile(r"(ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
@@ -216,8 +217,16 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             flag = 1
         if not instruction:
             temporary = []
+            if len(mem) == 1 and (VALID_COMMAND_REGEX_BIT_OP_SPECIAL.match(instruction_clean) or VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB.match(instruction_clean)):
+                line_edit = line_edit_dict.get(reg[0])
+                hex_str = line_edit.text()
+                hex_int = dict.twos_complement_to_signed(hex_str)
+                binary_str = Encoder(hex_int)
+                temporary.append(binary_str)
             for i in range(len(mem)):
                 item = mem[i]
+                if i == 0 and (regex_const.match(item) or regex_const_hex.match(item)) and not VALID_COMMAND_REGEX_BIT_OP.match(instruction_clean):
+                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
                 if regex_const.match(item):
                     clean_num = item.lstrip('#')
                     num = int(clean_num)
@@ -303,7 +312,6 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         binary_str_1 = Encoder(hex_int_1)
         instruction_clean = match_instruction_test.group(0)
         instruction = re.sub(match_instruction_test.group(0), "", instruction)
-        
         match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
         if match_condition:
             condition = match_condition.group(0)
@@ -311,7 +319,6 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             instruction = re.sub(condition, "", instruction)
         elif not match_condition:
             c = dict.check_condition(condition)
-        
         if not instruction:
             temporary = []
             for i in range(len(mem)):
@@ -373,19 +380,17 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 arguments, flag_C, flag_V = Check_Command_With_Flag(temporary, instruction_clean, line)
             else:
                 arguments = Check_Command_With_Flag(temporary, instruction_clean, line)
-            
             if not c:
                 arguments.append(f"{0:032b}")
                 return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                
             flag_T = 1    
             result = arguments[0]
             flag_N = result[0]
             if Decoder(result) == 0: flag_Z = '1'
         else:
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-            
-        return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+    
     elif match_instruction_single_data_tranfer:
         num_result_str = None
         binary_str = ""
@@ -433,6 +438,10 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 arguments.append(result)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+            if instruction_clean.lower() == "strb":
+                STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -730,6 +739,12 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             flag = 1
         if not instruction:
             temporary = []
+            if len(mem) == 1:
+                line_edit = line_edit_dict.get(reg[0])
+                hex_str = line_edit.text()
+                hex_int = dict.twos_complement_to_signed(hex_str)
+                binary_str = Encoder(hex_int)
+                temporary.append(binary_str)
             if l == 1 and len(mem) == 3:
                 reg.append(mem[0])
                 mem = mem[1:]
@@ -1204,3 +1219,22 @@ def STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_b
     dict.replace_one_memory_byte(model_2_byte, hex_str, mem_replace)
     dict.replace_one_memory_byte(model_4_byte, hex_str, mem_replace)
     dict.replace_one_memory_byte(model_8_byte, hex_str, mem_replace)
+    
+def STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte):
+    line_edit = line_edit_dict.get(reg[0])
+    mem_replace = line_edit.text()
+    mapping = {key: value for key, value in zip(address, memory)}
+    try:
+        result = mapping.get(hex_str)
+        position = memory.index(result)
+        memory[position] = mem_replace
+    except ValueError:
+        pass
+    dict.replace_one_memory_in_byte(model, hex_str, mem_replace)
+    dict.replace_one_memory_in_byte(model_2, hex_str, mem_replace)
+    dict.replace_one_memory_in_byte(model_4, hex_str, mem_replace)
+    dict.replace_one_memory_in_byte(model_8, hex_str, mem_replace)
+    dict.replace_one_memory_byte_in_byte(model_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte_in_byte(model_2_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte_in_byte(model_4_byte, hex_str, mem_replace)
+    dict.replace_one_memory_byte_in_byte(model_8_byte, hex_str, mem_replace)

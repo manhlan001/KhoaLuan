@@ -824,6 +824,10 @@ class Ui_MainWindow(object):
                 self.memory_current_line.append(memory_line_stacked)
         if data_memory:
             self.memory_current_line.extend(data_memory)
+        if len(self.address) != len(self.memory_current_line):
+            QtWidgets.QMessageBox.critical(None, "Lỗi", "Lỗi memory")
+            self.Restart()
+            return True
         replace_memory(self.model, self.address, self.memory_current_line)
         replace_memory(self.model_2, self.address, self.memory_current_line)
         replace_memory(self.model_4, self.address, self.memory_current_line)

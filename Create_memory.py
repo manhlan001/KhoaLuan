@@ -8,6 +8,8 @@ from decoder import Decoder
 from PyQt6 import QtCore, QtGui, QtWidgets 
 
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
+VALID_COMMAND_REGEX_BIT_OP_SPECIAL = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
+VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB = re.compile(r"(ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
@@ -70,7 +72,6 @@ def check_memory(self, line, address, lines, data_labels):
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
     if match_instruction:
-        num_hex = ""
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
         match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
@@ -115,6 +116,9 @@ def check_memory(self, line, address, lines, data_labels):
                 memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + dict.register_memory_dict.get(Rm)
             else:
                 shift = "00000000"
+                if len(mem) == 1 and (VALID_COMMAND_REGEX_BIT_OP_SPECIAL.match(instruction_clean) or VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB.match(instruction_clean)):
+                    mem.append(reg)
+                    mem.reverse()
                 for i in range(len(mem)):
                     item = mem[i]
                     if regex_const.match(item):
@@ -124,7 +128,6 @@ def check_memory(self, line, address, lines, data_labels):
                         Immediate_Operand = "1"
                     elif regex_const_hex.match(item):
                         clean_num = item.lstrip('#')
-                        num_hex = clean_num
                         num = dict.twos_complement_to_signed(clean_num)
                         num_memory = dict.process_binary(num)
                         Immediate_Operand = "1"
@@ -148,7 +151,6 @@ def check_memory(self, line, address, lines, data_labels):
                                 return memory
                     else:
                         return memory
-                    
                 Rd = dict.register_memory_dict.get(reg)    
                 Rn = "0000"
                 Rm = "0000"  
@@ -165,12 +167,12 @@ def check_memory(self, line, address, lines, data_labels):
                     if num_memory:
                         memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + num_memory
                     else:
-                        QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num_hex + ") after fixup")
-                        sys.exit()
+                        QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + str(num) + ") after fixup")
+                        return memory
         else:
             return memory
-        
         return memory
+    
     elif match_instruction_test:
         instruction_clean = match_instruction_test.group(0)
         instruction = re.sub(match_instruction_test.group(0), "", instruction)
@@ -179,7 +181,6 @@ def check_memory(self, line, address, lines, data_labels):
             condition = match_condition.group(0)
             instruction = re.sub(condition, "", instruction)
         if not instruction:
-            num_hex = ""
             shift = "00000000"
             for i in range(len(mem)):
                 item = mem[i]
@@ -190,7 +191,6 @@ def check_memory(self, line, address, lines, data_labels):
                     Immediate_Operand = "1"
                 elif regex_const_hex.match(item):
                     clean_num = item.lstrip('#')
-                    num_hex = clean_num
                     num = dict.twos_complement_to_signed(clean_num)
                     num_memory = dict.process_binary(num)
                     Immediate_Operand = "1"
@@ -214,7 +214,6 @@ def check_memory(self, line, address, lines, data_labels):
                             return memory
                 else:
                     return memory
-                    
             Rd = dict.register_memory_dict.get(reg)    
             Rn = "0000"    
             if len(reg_memory) == 1:
@@ -230,11 +229,10 @@ def check_memory(self, line, address, lines, data_labels):
                 if num_memory:
                     memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + num_memory
                 else:
-                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num_hex + ") after fixup")
-                    sys.exit()
+                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + str(num) + ") after fixup")
+                    return memory
         else:
             return memory
-            
         return memory
     
     elif match_instruction_single_data_tranfer:
@@ -569,6 +567,9 @@ def check_memory(self, line, address, lines, data_labels):
             instruction = instruction.lstrip(match_flag.group(0))
             flag = "1"
         if not instruction:
+            if len(mem) == 1:
+                mem.append(reg)
+                mem.reverse()
             if l == 1 and len(mem) == 3:
                 reg_memory.append(mem[0])
                 mem = mem[1:]
@@ -578,6 +579,7 @@ def check_memory(self, line, address, lines, data_labels):
                     reg_memory.append(item)
                 else:
                     return memory
+            reg_memory.reverse()
             condition_memory = dict.condition_memory_dict.get(condition)    
             if u != None and (l == 1 or instruction_clean.lower() == "div"):
                 if instruction_clean.lower() == "div":
@@ -612,7 +614,6 @@ def check_memory(self, line, address, lines, data_labels):
                 memory = condition_memory + "000000" + A + flag + Rd + Rn + Rs + "1001" + Rm
         else:
             return memory
-                    
         return memory
     else:
         return memory
