@@ -218,11 +218,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         if not instruction:
             temporary = []
             if len(mem) == 1 and (VALID_COMMAND_REGEX_BIT_OP_SPECIAL.match(instruction_clean) or VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB.match(instruction_clean)):
-                line_edit = line_edit_dict.get(reg[0])
-                hex_str = line_edit.text()
-                hex_int = dict.twos_complement_to_signed(hex_str)
-                binary_str = Encoder(hex_int)
-                temporary.append(binary_str)
+                mem.insert(0, reg[0])
             for i in range(len(mem)):
                 item = mem[i]
                 if i == 0 and (regex_const.match(item) or regex_const_hex.match(item)) and not VALID_COMMAND_REGEX_BIT_OP.match(instruction_clean):
@@ -675,9 +671,10 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                         return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
                 num_2 = Decoder(binary_str_reg[0])
                 num_result = num_1 + num_2
-                num_result_str = Encoder(num_result)
                 hex_str = format(num_result, '08x')
-                    
+                if exclamation_check:
+                    num_result_str = Encoder(num_result)
+                
             elif not bracket_1:
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -703,10 +700,20 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     arguments.append(num_result_str)
                 else:
                     arguments = None
-                
+            if instruction_clean.lower() == "strb":
+                STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                if(len(reg) == 1):
+                    reg = None
+                elif(len(reg) == 2):
+                    reg[0] = reg[1]
+                    reg.pop(1)
+                if num_result_str and t == 1:
+                    arguments.append(num_result_str)
+                else:
+                    arguments = None
         elif len(mem) > 4:
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-    
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
     if match_instruction_multi:
@@ -740,11 +747,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         if not instruction:
             temporary = []
             if len(mem) == 1:
-                line_edit = line_edit_dict.get(reg[0])
-                hex_str = line_edit.text()
-                hex_int = dict.twos_complement_to_signed(hex_str)
-                binary_str = Encoder(hex_int)
-                temporary.append(binary_str)
+                mem.insert(0, reg[0])
             if l == 1 and len(mem) == 3:
                 reg.append(mem[0])
                 mem = mem[1:]
@@ -758,19 +761,16 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     temporary.append(binary_str)
                 else:
                     return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                      
             if flag == 1:
                 result = arguments[0]
                 flag_N = result[0]
                 if Decoder(result) == 0: flag_Z = '1'
-            
             if u != None and (l == 1 or instruction_clean.lower() == "div"):    
                 arguments = Check_Command_Long(temporary, instruction_clean, u, reg, line)
             elif u == None and l == None:
                 arguments = Check_Command(temporary, instruction_clean, line)
             else:
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-            
             if not c:
                 arguments.append(f"{0:032b}")
                 return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T

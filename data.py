@@ -153,9 +153,8 @@ def process_data(data_lines, address):
                             for j in range(len(ascii_mem)):
                                 temp.append(ascii_mem[j])
                                 data_address.append(address_data_base_str)
-                                if j < len(ascii_mem) - 1 or len(ascii_mem) == 1:
-                                    address_data_base += 4
-                                    address_data_base_str = format(address_data_base, '08x')
+                                address_data_base += 4
+                                address_data_base_str = format(address_data_base, '08x')
                     else:
                         return None, None, None    
                 else:

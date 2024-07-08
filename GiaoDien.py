@@ -600,25 +600,25 @@ class Ui_MainWindow(object):
                 self.Addrr_Mem_View.setModel(self.model_8_byte)
                 self.Addrr_Mem_View.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
     def load_mem_x1(self):
-        for i in range(self.current_index, min(self.current_index + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index, min(self.current_index + self.items_per_batch * 8, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 4, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aaaaaaaa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model.appendRow([addr, mem_1])
-        self.current_index += self.items_per_batch
+        self.current_index += self.items_per_batch * 8
     def load_mem_x1_byte(self):
-        for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index_byte, min(self.current_index_byte + self.items_per_batch * 8, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 4, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
             mem_1 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_1.setFlags(mem_1.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_byte.appendRow([addr, mem_1])
-        self.current_index_byte += self.items_per_batch
+        self.current_index_byte += self.items_per_batch * 8
     def load_mem_x2(self):
-        for i in range(self.current_index_x2, min(self.current_index_x2 + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index_x2, min(self.current_index_x2 + self.items_per_batch * 4, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 8, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
@@ -627,9 +627,9 @@ class Ui_MainWindow(object):
             mem_2 = QtGui.QStandardItem('aaaaaaaa')
             mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_2.appendRow([addr, mem_1, mem_2])
-        self.current_index_x2 += self.items_per_batch
+        self.current_index_x2 += self.items_per_batch * 4
     def load_mem_x2_byte(self):
-        for i in range(self.current_index_x2_byte, min(self.current_index_x2_byte + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index_x2_byte, min(self.current_index_x2_byte + self.items_per_batch * 4, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 8, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
@@ -638,9 +638,9 @@ class Ui_MainWindow(object):
             mem_2 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_2.setFlags(mem_2.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_2_byte.appendRow([addr, mem_1, mem_2])
-        self.current_index_x2_byte += self.items_per_batch
+        self.current_index_x2_byte += self.items_per_batch * 4
     def load_mem_x4(self):
-        for i in range(self.current_index_x4, min(self.current_index_x4 + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index_x4, min(self.current_index_x4 + self.items_per_batch * 2, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 16, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
@@ -653,9 +653,9 @@ class Ui_MainWindow(object):
             mem_4 = QtGui.QStandardItem('aaaaaaaa')
             mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_4.appendRow([addr, mem_1, mem_2, mem_3, mem_4])
-        self.current_index_x4 += self.items_per_batch
+        self.current_index_x4 += self.items_per_batch * 2
     def load_mem_x4_byte(self):
-        for i in range(self.current_index_x4_byte, min(self.current_index_x4_byte + self.items_per_batch, self.total_items)):
+        for i in range(self.current_index_x4_byte, min(self.current_index_x4_byte + self.items_per_batch * 2, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 16, '08x'))
             addr.setFlags(addr.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             addr.setBackground(QtGui.QColor("#F0F8FF"))
@@ -668,7 +668,7 @@ class Ui_MainWindow(object):
             mem_4 = QtGui.QStandardItem('aa' + " " + 'aa' + " " + 'aa' + " " + 'aa')
             mem_4.setFlags(mem_4.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             self.model_4_byte.appendRow([addr, mem_1, mem_2, mem_3, mem_4])
-        self.current_index_x4_byte += self.items_per_batch
+        self.current_index_x4_byte += self.items_per_batch * 2
     def load_mem_x8(self):
         for i in range(self.current_index_x8, min(self.current_index_x8 + self.items_per_batch, self.total_items)):
             addr = QtGui.QStandardItem(format(i * 32, '08x'))
@@ -1202,7 +1202,7 @@ class Ui_MainWindow(object):
             if label in labels:
                 position = lines.index(labels[label][0])
                 self.current_line_index = position
-            elif label != None:
+            elif label in lines:
                 position = lines.index(label)
                 self.current_line_index = position
             if self.current_line_index >= len(lines):
@@ -1214,25 +1214,13 @@ class Ui_MainWindow(object):
             else:
                 pc_binary = self.address[self.current_line_index]
                 self.highlight_line(pc_binary)
-            if arguments and len(reg) == 1 and len(arguments) == 1:
-                line_edit = line_edit_dict.get(reg[0])
-                result_int = int(arguments[0], 2)
-                result_str = format(result_int, '08x')
-                line_edit.setText(result_str)
-                line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments and len(reg) == 2 and len(arguments) == 2:
-                line_edit_1 = line_edit_dict.get(reg[0])
-                result_int_1 = int(arguments[0], 2)
-                result_str_1 = format(result_int_1, '08x')
-                line_edit_1.setText(result_str_1)
-                line_edit_1.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-                line_edit_2 = line_edit_dict.get(reg[1])
-                result_int_2 = int(arguments[1], 2)
-                result_str_2 = format(result_int_2, '08x')
-                line_edit_2.setText(result_str_2)
-                line_edit_2.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-            elif arguments is None and (flag_T or self.current_line_index == len(lines) or flag_B):
-                pass
+            if arguments and len(reg) == len(arguments):
+                for i in range(len(arguments)):
+                    line_edit = line_edit_dict.get(reg[i])
+                    result_int = int(arguments[i], 2)
+                    result_str = format(result_int, '08x')
+                    line_edit.setText(result_str)
+                    line_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             n_edit = conditon_dict.get("n")
             z_edit = conditon_dict.get("z")
             c_edit = conditon_dict.get("c")

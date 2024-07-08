@@ -666,7 +666,7 @@ def find_one_memory_in_byte(model_byte, addr_input):
     if not found:
         last_item_value = twos_complement_to_signed(model_byte.item(model_byte.rowCount() - 1, 0).text())
         if search_value < last_item_value:
-            return mem
+            return mem_out
         
 def replace_one_memory(model, addr_input, mem_input):
     found = False
