@@ -1130,7 +1130,9 @@ class Ui_MainWindow(object):
             else:
                 pc_binary = self.address[self.current_line_index]
                 self.highlight_line(pc_binary)
-            if arguments and len(reg) == len(arguments):
+            if flag_T:
+                pass
+            elif arguments and len(reg) == len(arguments):
                 for i in range(len(arguments)):
                     line_edit = line_edit_dict.get(reg[i])
                     result_int = int(arguments[i], 2)
@@ -1214,7 +1216,9 @@ class Ui_MainWindow(object):
             else:
                 pc_binary = self.address[self.current_line_index]
                 self.highlight_line(pc_binary)
-            if arguments and len(reg) == len(arguments):
+            if flag_T:
+                pass
+            elif arguments and len(reg) == len(arguments):
                 for i in range(len(arguments)):
                     line_edit = line_edit_dict.get(reg[i])
                     result_int = int(arguments[i], 2)
