@@ -404,6 +404,8 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         temporary = []
         if instruction.lower() == "b":
             instruction_clean = instruction_clean + "b"
+        if instruction.lower() == "h":
+            instruction_clean = instruction_clean + "h"
         if len(mem) == 1:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
@@ -432,12 +434,19 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             if instruction_clean.lower() == "ldrb":
                 result = LDR_B(hex_str, model_byte)
                 arguments.append(result)
+            if instruction_clean.lower() == "ldrh":
+                result = LDR_H(hex_str, model_byte)
+                arguments.append(result)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             if instruction_clean.lower() == "strb":
                 STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+            if instruction_clean.lower() == "strh":
+                STR_H(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
@@ -529,8 +538,37 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 arguments.append(result)
                 if num_result_str:
                     arguments.append(num_result_str)
+            if instruction_clean.lower() == "ldrh":
+                result = LDR_H(hex_str, model_byte)
+                arguments.append(result)
+                if num_result_str:
+                    arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                if(len(reg) == 1):
+                    reg = None
+                elif(len(reg) == 2):
+                    reg[0] = reg[1]
+                    reg.pop(1)
+                if num_result_str:
+                    arguments.append(num_result_str)
+                else:
+                    arguments = None
+            if instruction_clean.lower() == "strb":
+                STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                if(len(reg) == 1):
+                    reg = None
+                elif(len(reg) == 2):
+                    reg[0] = reg[1]
+                    reg.pop(1)
+                if num_result_str:
+                    arguments.append(num_result_str)
+                else:
+                    arguments = None
+            if instruction_clean.lower() == "strh":
+                STR_H(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
@@ -688,6 +726,11 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 arguments.append(result)
                 if num_result_str:
                     arguments.append(num_result_str)
+            if instruction_clean.lower() == "ldrh":
+                result = LDR_H(hex_str, model_byte)
+                arguments.append(result)
+                if num_result_str:
+                    arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
                 flag_T = 1
@@ -709,6 +752,18 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     reg[0] = reg[1]
                     reg.pop(1)
                 if num_result_str and t == 1:
+                    arguments.append(num_result_str)
+                else:
+                    arguments = None
+            if instruction_clean.lower() == "strh":
+                STR_H(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                flag_T = 1
+                if(len(reg) == 1):
+                    reg = None
+                elif(len(reg) == 2):
+                    reg[0] = reg[1]
+                    reg.pop(1)
+                if num_result_str:
                     arguments.append(num_result_str)
                 else:
                     arguments = None
@@ -1200,6 +1255,14 @@ def LDR_B(hex_str, model_byte):
     if result == None:
         result = f"{0:032b}"
     return result
+
+def LDR_H(hex_str, model_byte):
+    result = dict.find_one_memory_in_halfword(model_byte, hex_str)
+    result_int = dict.twos_complement_to_signed(result)
+    result = Encoder(result_int)
+    if result == None:
+        result = f"{0:032b}"
+    return result
     
 def STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte):
     line_edit = line_edit_dict.get(reg[0])
@@ -1238,3 +1301,22 @@ def STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model
     dict.replace_one_memory_byte_in_byte(model_2_byte, hex_str, mem_replace)
     dict.replace_one_memory_byte_in_byte(model_4_byte, hex_str, mem_replace)
     dict.replace_one_memory_byte_in_byte(model_8_byte, hex_str, mem_replace)
+
+def STR_H(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte):
+    line_edit = line_edit_dict.get(reg[0])
+    mem_replace = line_edit.text()
+    mapping = {key: value for key, value in zip(address, memory)}
+    try:
+        result = mapping.get(hex_str)
+        position = memory.index(result)
+        memory[position] = mem_replace
+    except ValueError:
+        pass
+    dict.replace_one_memory_in_halfword(model, hex_str, mem_replace)
+    dict.replace_one_memory_in_halfword(model_2, hex_str, mem_replace)
+    dict.replace_one_memory_in_halfword(model_4, hex_str, mem_replace)
+    dict.replace_one_memory_in_halfword(model_8, hex_str, mem_replace)
+    dict.replace_one_memory_halfword_in_byte(model_byte, hex_str, mem_replace)
+    dict.replace_one_memory_halfword_in_byte(model_2_byte, hex_str, mem_replace)
+    dict.replace_one_memory_halfword_in_byte(model_4_byte, hex_str, mem_replace)
+    dict.replace_one_memory_halfword_in_byte(model_8_byte, hex_str, mem_replace)

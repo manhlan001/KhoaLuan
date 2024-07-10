@@ -615,7 +615,7 @@ def replace_memory_byte(model_byte, listAddr, listMem):
         listMem[i] = combine_hex(listMem[i])
 
 def find_one_memory(model, addr_input):
-    mem = ""
+    mem = "00"
     found = False
     search_value  = twos_complement_to_signed(addr_input)
     for row in range(1, model.rowCount()):
@@ -632,7 +632,7 @@ def find_one_memory(model, addr_input):
             return mem
         
 def find_one_memory_in_byte(model_byte, addr_input):
-    mem = ""
+    mem_out = "00"
     found = False
     search_value  = twos_complement_to_signed(addr_input)
     for row in range(1, model_byte.rowCount()):
@@ -661,6 +661,37 @@ def find_one_memory_in_byte(model_byte, addr_input):
             mem = model_byte.item(row, 1).text()
             mems = mem.split()
             mem_out = mems[3]
+            found = True
+            return mem_out
+    if not found:
+        last_item_value = twos_complement_to_signed(model_byte.item(model_byte.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return mem_out
+        
+def find_one_memory_in_halfword(model_byte, addr_input):
+    mem_out = "0000"
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    for row in range(1, model_byte.rowCount()):
+        item_addr = model_byte.item(row, 0)
+        if item_addr:
+            addr = item_addr.text()
+        if search_value - twos_complement_to_signed(addr) == 0:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[1] + mems[0]
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 1:
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 2:
+            mem = model_byte.item(row, 1).text()
+            mems = mem.split()
+            mem_out = mems[3] + mems[2]
+            found = True
+            return mem_out
+        elif search_value - twos_complement_to_signed(addr) == 3:
             found = True
             return mem_out
     if not found:
@@ -833,6 +864,150 @@ def replace_one_memory_byte_in_byte(model, addr_input, mem_input):
             model_text = model.item(row, 1).text()
             model_text_byte = model_text.split()
             model_text_byte[surplus] = mem_input_byte
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return
+        
+def replace_one_memory_in_halfword(model, addr_input, mem_input):
+    mem_input = split_hex(mem_input)
+    mem_input = mem_input.split()
+    num_addr = int(addr_input, 16)
+    surplus = num_addr % 4
+    num_addr = num_addr - surplus
+    addr_input = format(num_addr, "08x")
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, 1).setText(model_text)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = split_hex(model_text)
+            model_text_byte = model_text_byte.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+    if not found:
+        last_item_value = twos_complement_to_signed(model.item(model.rowCount() - 1, 0).text())
+        if search_value < last_item_value:
+            return
+        
+def replace_one_memory_halfword_in_byte(model, addr_input, mem_input):
+    mem_input = split_hex(mem_input)
+    mem_input = mem_input.split()
+    num_addr = int(addr_input, 16)
+    surplus = num_addr % 4
+    num_addr = num_addr - surplus
+    addr_input = format(num_addr, "08x")
+    found = False
+    search_value  = twos_complement_to_signed(addr_input)
+    max_row = model.rowCount() - 1
+    for row in range(1, model.rowCount()):
+        item_addr = model.item(row, 0)
+        if row != max_row:
+            item_addr_next = model.item(row + 1, 0)
+            addr_next = item_addr_next.text()
+        if item_addr:
+            addr = item_addr.text()
+        if search_value == twos_complement_to_signed(addr):
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, 1).setText(model_text)
+            found = True
+            return
+        if addr_next and search_value > twos_complement_to_signed(addr) and search_value < twos_complement_to_signed(addr_next):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
+            model_text_byte.reverse()
+            model_text_byte = "".join(byte for byte in model_text_byte)
+            model_text = combine_hex(model_text_byte)
+            model_text = split_hex(model_text)
+            model.item(row, num).setText(model_text)
+            found = True
+            return
+        if not addr_next and search_value > twos_complement_to_signed(addr):
+            num = int((search_value - twos_complement_to_signed(addr)) / 4) + 1
+            model_text = model.item(row, 1).text()
+            model_text_byte = model_text.split()
+            if surplus == 0 or surplus == 2:
+                model_text_byte[0] = mem_input[0]
+                model_text_byte[1] = mem_input[1]
+            else:
+                model_text_byte[0] = "00"
+                model_text_byte[1] = "00"
             model_text_byte.reverse()
             model_text_byte = "".join(byte for byte in model_text_byte)
             model_text = combine_hex(model_text_byte)

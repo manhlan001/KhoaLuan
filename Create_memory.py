@@ -237,7 +237,7 @@ def check_memory(self, line, address, lines, data_labels):
     
     elif match_instruction_single_data_tranfer:
         P = U = B = W = L = "0"
-        Immediate_Operand = "0"
+        Immediate_Operand = "1"
         Rn = "0000"
         condition_memory = dict.condition_memory_dict.get(condition)
         shift = "00000000"
@@ -250,6 +250,8 @@ def check_memory(self, line, address, lines, data_labels):
             instruction = re.sub(condition, "", instruction)
         if instruction.lower() == "b":
             instruction_clean = instruction_clean + "b"
+        if instruction.lower() == "h":
+            instruction_clean = instruction_clean + "h"
         regex_bracket_1 = re.compile(r"\[", re.IGNORECASE)
         regex_bracket_2 = re.compile(r"\]", re.IGNORECASE)
         if len(mem) == 1:
@@ -276,7 +278,6 @@ def check_memory(self, line, address, lines, data_labels):
                         num_memory = Encoder_12bit(num_1 - num_2)
                 else:
                     return memory
-            
             if instruction_clean.lower() == "ldr":
                 L = "1"
                 B = "0"
@@ -293,10 +294,15 @@ def check_memory(self, line, address, lines, data_labels):
             Rm = "0000"
             P = U = "1"
             W = "0"
-            if Immediate_Operand == "0":
-                memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
-            elif Immediate_Operand == "1":
-                memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
+            if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
+                if instruction_clean.lower() == "ldrh":
+                    L = "1"
+                if instruction_clean.lower() == "strh":
+                    L = "0"
+                memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
+                return memory
+            
+            memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
                 
         if len(mem) == 2:
             bracket_1 = re.search(regex_bracket_1, mem[0])
@@ -419,11 +425,33 @@ def check_memory(self, line, address, lines, data_labels):
             Rn = dict.register_memory_dict.get(reg_memory[0])
             if Immediate_Operand == "0":
                 if num_memory:
+                    if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
+                        if instruction_clean.lower() == "ldrh":
+                            L = "1"
+                        if instruction_clean.lower() == "strh":
+                            L = "0"
+                        num = Decoder(num_memory)
+                        num_hex = format(num, '08x')
+                        num_split = dict.split_hex(num_hex)
+                        num_split = num_split.split()
+                        num_split.reverse()
+                        offset_high = num_split[0] + num_split[1]
+                        offset_low = num_split[2] + num_split[3]
+                        memory = condition_memory + "000" + P + U + "1" + W + L + Rn + Rd + offset_high + "1011" + offset_low
+                        return memory
                     memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
                 else:
                     QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num + ") after fixup")
                     return memory
             elif Immediate_Operand == "1":
+                if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
+                    if instruction_clean.lower() == "ldrh":
+                        L = "1"
+                    if instruction_clean.lower() == "strh":
+                        L = "0"
+                    memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
+                    return memory
+                
                 memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
                 
         elif len(mem) > 2 and len(mem) < 5:
@@ -536,6 +564,13 @@ def check_memory(self, line, address, lines, data_labels):
             U = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
+            if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
+                if instruction_clean.lower() == "ldrh":
+                    L = "1"
+                if instruction_clean.lower() == "strh":
+                    L = "0"
+                memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
+                return memory
             memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm  
         elif len(mem) > 4:
             return memory
@@ -583,12 +618,12 @@ def check_memory(self, line, address, lines, data_labels):
             condition_memory = dict.condition_memory_dict.get(condition)    
             if u != None and (l == 1 or instruction_clean.lower() == "div"):
                 if instruction_clean.lower() == "div":
-                    A = "0"
+                    A = "1"
                     Rd = dict.register_memory_dict.get(reg)    
-                    Rn = "0000"
+                    Rn = "1111"
                     Rm = dict.register_memory_dict.get(reg_memory[0])
                     Rs = dict.register_memory_dict.get(reg_memory[1])
-                    memory = condition_memory + "00001" + u + A + flag + Rd + Rn + Rs + "1001" + Rm
+                    memory = condition_memory + "011100" + u + A + Rd + Rn + Rs + "1001" + Rm
                 else:
                     RdLo = dict.register_memory_dict.get(reg)  
                     RdHi = dict.register_memory_dict.get(reg_memory[0])
