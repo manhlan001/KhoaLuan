@@ -17,6 +17,7 @@ VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
+VALID_COMMAND_SATURATE = re.compile(r"(SSAT|USAT)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -198,6 +199,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
     match_instruction_test = re.search(VALID_COMMAND_REGEX_TEST, instruction)
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
+    match_instruction_saturate = re.search(VALID_COMMAND_SATURATE, instruction)
     if match_instruction:
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
@@ -771,7 +773,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
-    if match_instruction_multi:
+    elif match_instruction_multi:
         u = None
         if instruction and instruction[0] == "u":
             u = 0
@@ -835,6 +837,76 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
+    elif match_instruction_saturate:
+        instruction_clean = match_instruction_saturate.group(0)
+        instruction = re.sub(match_instruction_saturate.group(0), "", instruction)
+        match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+        if match_condition:
+            condition = match_condition.group(0)
+            c = dict.check_condition(condition)
+            instruction = re.sub(condition, "", instruction)
+        elif not match_condition:
+            c = dict.check_condition(condition)
+        if not instruction:
+            temporary = []
+            if len(mem) == 2:
+                const = mem[0]
+                reg_const = mem[1]
+                if regex_const.match(const) and regex_register.match(reg_const):
+                    const = const.lstrip('#')
+                    const = int(const)
+                    sat = int(pow(2, const) / 2)
+                    line_edit = line_edit_dict.get(reg_const)
+                    binary_str = line_edit.text()
+                    num = dict.twos_complement_to_signed(binary_str)
+                    arguments = SAT(sat, num, instruction_clean)
+                else:
+                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+            elif len(mem) == 3 or len(mem) == 4:
+                const = mem[0]
+                reg_const = mem[1]
+                shift = mem[2]
+                if regex_const.match(const) and regex_register.match(reg_const):
+                    const = const.lstrip('#')
+                    const = int(const)
+                    sat = int(pow(2, const) / 2)
+                    line_edit = line_edit_dict.get(reg_const)
+                    binary_str = line_edit.text()
+                    hex_int_in = dict.twos_complement_to_signed(binary_str)
+                    hex_str_in = Encoder(hex_int_in)
+                    if SHIFT_REGEX.match(shift):
+                        temp = []
+                        if shift.lower() == "rrx":
+                            num_rrx = conditon_dict.get("c")
+                            num_str = num_rrx.text()
+                            temp.append(hex_str_in)
+                            temp.append(num_str)
+                            binary_str_shift, _ = Check_Shift(temp, shift, line)
+                        else:
+                            if regex_const.match(mem[3]):
+                                clean_num = mem[3].lstrip('#')
+                                num = int(clean_num)
+                                num_str = Encoder(num)
+                                temp.append(hex_str_in)
+                                temp.append(num_str)
+                                binary_str_shift, _ = Check_Shift(temp, shift, line)
+                            elif regex_register.match(mem[3]):
+                                num_edit = line_edit_dict.get(mem[3])
+                                num_str = num_edit.text()
+                                num = int(num_str, 16)
+                                num_str = Encoder(num)
+                                temp.append(hex_str_in)
+                                temp.append(num_str)
+                                binary_str_shift, _ = Check_Shift(temp, shift, line)
+                    num = dict.twos_complement_to_signed(binary_str_shift)
+                    arguments = SAT(sat, num, instruction_clean)
+                else:
+                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+            else:
+                return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        else:
+            return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     else:
         return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
@@ -1239,6 +1311,37 @@ def SMLS(temporary, reg, line):
     result.append(lower_32_str)
     result.append(upper_32_str)
     return result
+
+def SAT(sat, num, instruction):
+    arguments = []
+    if instruction.lower() == "ssat":
+        if num < -sat:
+            result = -sat
+            result = Encoder(result)
+            arguments.append(result)
+        elif num > sat - 1:
+            result = sat - 1
+            result = Encoder(result)
+            arguments.append(result)
+        else:
+            result = Encoder(num)
+            arguments.append(result)
+        return arguments
+    elif instruction.lower() == "usat":
+        if num < 0:
+            result = 0
+            result = Encoder(result)
+            arguments.append(result)
+        elif num > 2 * sat - 1:
+            result = 2 * sat - 1
+            result = Encoder(result)
+            arguments.append(result)
+        else:
+            result = Encoder(num)
+            arguments.append(result)
+        return arguments
+    else:
+        return None
 
 def LDR(hex_str, model):
     result = dict.find_one_memory(model, hex_str)

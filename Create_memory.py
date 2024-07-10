@@ -3,7 +3,7 @@ import sys
 import os
 from dict import line_edit_dict, conditon_dict
 import dict
-from encoder import Encoder, Encoder_12bit
+from encoder import Encoder, Encoder_12bit, Encoder_5bit
 from decoder import Decoder
 from PyQt6 import QtCore, QtGui, QtWidgets 
 
@@ -16,6 +16,7 @@ VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORE
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
+VALID_COMMAND_SATURATE = re.compile(r"(SSAT|USAT)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -71,6 +72,7 @@ def check_memory(self, line, address, lines, data_labels):
     match_instruction_test = re.search(VALID_COMMAND_REGEX_TEST, instruction)
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
+    match_instruction_saturate = re.search(VALID_COMMAND_SATURATE, instruction)
     if match_instruction:
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
@@ -650,6 +652,67 @@ def check_memory(self, line, address, lines, data_labels):
         else:
             return memory
         return memory
+    
+    elif match_instruction_saturate:
+        instruction_clean = match_instruction_saturate.group(0)
+        instruction = re.sub(match_instruction_saturate.group(0), "", instruction)
+        match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+        if match_condition:
+            condition = match_condition.group(0)
+            instruction = re.sub(condition, "", instruction)
+        condition_memory = dict.condition_memory_dict.get(condition)
+        shift_imm5 = "00000"
+        sh = "0"
+        if not instruction:
+            if instruction_clean.lower() == "ssat":
+                sat_num = 1
+                u = "0"
+            elif instruction_clean.lower() == "usat":
+                sat_num = 0
+                u = "1"
+            Rd = dict.register_memory_dict.get(reg)
+            if len(mem) == 2:
+                const = mem[0]
+                reg_const = mem[1]
+                if regex_const.match(const) and regex_register.match(reg_const):
+                    const = const.lstrip('#')
+                    const = int(const) - sat_num
+                    sat = Encoder_5bit(const)
+                    Rn = dict.register_memory_dict.get(reg_const)
+                    memory = condition_memory + "01101" + u + "1" + sat + Rd + shift_imm5 + sh + "01" + Rn
+                else:
+                    return memory
+            elif len(mem) == 3 or len(mem) == 4:
+                const = mem[0]
+                reg_const = mem[1]
+                shift = mem[2]
+                if regex_const.match(const) and regex_register.match(reg_const):
+                    const = const.lstrip('#')
+                    const = int(const) - sat_num
+                    sat = Encoder_5bit(const)
+                    Rn = dict.register_memory_dict.get(reg_const)
+                    if SHIFT_REGEX.match(shift):
+                        if shift.lower() == "rrx":
+                            shift_imm5 = "00000"
+                        elif not shift.lower() == "rrx" and i + 2 < len(mem):
+                            if regex_const.match(mem[3]):
+                                clean_num = mem[3].lstrip('#')
+                                num = int(clean_num)
+                                shift_imm5 = Encoder_5bit(num)
+                            elif regex_register.match(mem[3]):
+                                num_edit = line_edit_dict.get(mem[3])
+                                num_str = num_edit.text()
+                                num = int(num_str, 16)
+                                shift_imm5 = Encoder_5bit(num)
+                    memory = condition_memory + "01101" + u + "1" + sat + Rd + shift_imm5 + sh + "01" + Rn
+                else:
+                    return memory
+            else:
+                return memory
+        else:
+            return memory
+        return memory
+    
     else:
         return memory
     
