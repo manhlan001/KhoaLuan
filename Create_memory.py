@@ -240,6 +240,7 @@ def check_memory(self, line, address, lines, data_labels):
     elif match_instruction_single_data_tranfer:
         P = U = B = W = L = "0"
         Immediate_Operand = "1"
+        Rm = "0000"
         Rn = "0000"
         condition_memory = dict.condition_memory_dict.get(condition)
         shift = "00000000"
