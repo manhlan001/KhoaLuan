@@ -1,0 +1,47 @@
+.text
+main:
+    push {r4, r5, r6}
+
+    ldr r0, =list
+    ldr r1, =length
+    ldr r1, [r1]
+    sub r1, r1, #1
+    mov r2, #0
+
+for1:
+    cmp r2, r1
+    bge end
+
+    mov r3, r2
+    add r4, r2, #1
+
+for2:
+    cmp r4, r1
+    bgt endfor2
+
+    ldr r5, [r0, r4, lsl #2]
+    ldr r6, [r0, r3, lsl #2]
+    cmp r5, r6
+    bge next
+
+    mov r3, r4
+
+next:
+    add r4, r4, #1
+    b for2
+
+endfor2:
+    ldr r5, [r0, r2, lsl #2]
+    ldr r6, [r0, r3, lsl #2]
+    str r6, [r0, r2, lsl #2]
+    str r5, [r0, r3, lsl #2]
+
+    add r2, r2, #1
+    b for1
+
+end:
+    pop {r4, r5, r6}
+
+.data
+list: .word 5, 1, 4, 2, 8, -7
+length: .word 6

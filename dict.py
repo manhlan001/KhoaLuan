@@ -457,6 +457,7 @@ def mul_64_signed(temporary, line):
     return result
 
 def divide_32_unsigned(temporary, line):
+    print(temporary)
     result = []
     if len(temporary) != 2:
         QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
@@ -469,8 +470,9 @@ def divide_32_unsigned(temporary, line):
     num1 = int(str1, 2)
     num2 = int(str2, 2)
     if num2 == 0:
-        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
-        return None
+        result_str = Encoder(0)
+        result.append(result_str)
+        return result
     result_int = num1 // num2
     result_str = f"{result_int:032b}"
     result.append(result_str)
@@ -478,6 +480,7 @@ def divide_32_unsigned(temporary, line):
 
 def divide_32_signed(temporary, line):
     result = []
+    print(temporary)
     if len(temporary) != 2:
         QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
         return None
@@ -493,8 +496,9 @@ def divide_32_signed(temporary, line):
     if num2 >= 2**31:
         num2 -= 2**32
     if num2 == 0:
-        QtWidgets.QMessageBox.critical(None, "Lỗi", "undefined input for an arithmetic operation --" + line)
-        return None
+        result_str = Encoder(0)
+        result.append(result_str)
+        return result
     result_int = num1 // num2
     if result_int < 0:
         result_int += 2**32

@@ -1,11 +1,9 @@
 import re
-import sys
-import os
 from dict import line_edit_dict, conditon_dict
 import dict
 from encoder import Encoder, Encoder_12bit, Encoder_5bit
 from decoder import Decoder
-from PyQt6 import QtCore, QtGui, QtWidgets 
+from PyQt6 import QtWidgets 
 
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP_SPECIAL = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
@@ -14,7 +12,7 @@ VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(MOV|MVN|AND|BIC|ORR|ORN|EOR)", re.IGN
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
-VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
+VALID_COMMAND_BRANCH = re.compile(r"(B|BL)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
 VALID_COMMAND_SATURATE = re.compile(r"(SSAT|USAT)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
@@ -136,7 +134,7 @@ def check_memory(self, line, address, lines, data_labels):
                     elif regex_register.match(item):
                         reg_memory.append(item)
                         Immediate_Operand = "0"
-                        if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and VALID_COMMAND_REGEX_BIT_OP.match(instruction_clean):
+                        if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and not SHIFT_REGEX.match(instruction_clean):
                             if mem[i + 1].lower() == "rrx":
                                 shift = f"{0:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
                                 break
@@ -749,6 +747,8 @@ def memory_branch(self, line, lines, address, labels):
         return memory
     
 def get_memory_offset(current_line, current_label, lines, address, labels):
+    current = target = None
+    result_str = "000000000000000000000000"
     mapping = {key: value for key, value in zip(lines, address)}
     if current_label in labels:
         target = mapping.get(labels[current_label][0])
@@ -787,42 +787,53 @@ def memory_stacked(self, line, lines, address, labels):
                         "r8": "0", "r9": "0", "r10": "0", "r11": "0",
                         "r12": "0", "sp": "0", "lr": "0", "pc": "0"
                     }
-        pop = "0100010111101"
-        push = "0100100101101"
         if instruction.lower() == "push":
             if mems[0].startswith("{") and mems[-1].endswith("}"):
                 mems[0] = mems[0].strip('{')
                 mems[-1] = mems[-1].strip('}')
-                for mem in mems:
-                    if regex_register.match(mem):
-                        if mem in registers:
-                            registers[mem] = "1"
-                    else:
-                        return memory
-            else:
-                return None, None, None, None
-            memory = condition_memory + push + (registers["pc"] + registers["lr"] + registers["sp"]
+                if len(mems) == 1:
+                    Rt = dict.register_memory_dict.get(mem[0])
+                    push = "010" + "1" + "0" + "0" + "1" + "0" + "1101"
+                    memory = condition_memory + push + Rt + "000000000100"
+                else:
+                    push = "100100" + "1" + "0" + "1101"
+                    for mem in mems:
+                        if regex_register.match(mem):
+                            if mem in registers:
+                                registers[mem] = "1"
+                        else:
+                            return memory
+                    memory = condition_memory + push + (registers["pc"] + registers["lr"] + registers["sp"]
                                             + registers["r12"] + registers["r11"] + registers["r10"]
                                             + registers["r9"] + registers["r8"] + registers["r7"]
                                             + registers["r6"] + registers["r5"] + registers["r4"]
                                             + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
+            else:
+                return None, None, None, None
+            
         if instruction.lower() == "pop":
             if mems[0].startswith("{") and mems[-1].endswith("}"):
                 mems[0] = mems[0].strip('{')
                 mems[-1] = mems[-1].strip('}')
-                for mem in mems:
-                    if regex_register.match(mem):
-                        if mem in registers:
-                            registers[mem] = "1"
-                    else:
-                        return memory
-            else:
-                return None, None, None, None
-            memory = condition_memory + pop + (registers["pc"] + registers["lr"] + registers["sp"]
+                if len(mems) == 1:
+                    Rt = dict.register_memory_dict.get(mem[0])
+                    pop = "010" + "0" + "1" + "0" + "0" + "1" + "1101"
+                    memory = condition_memory + pop + Rt + "000000000100"
+                else:
+                    pop = "100010" + "1" + "1" + "1101"
+                    for mem in mems:
+                        if regex_register.match(mem):
+                            if mem in registers:
+                                registers[mem] = "1"
+                        else:
+                            return memory
+                    memory = condition_memory + pop + (registers["pc"] + registers["lr"] + registers["sp"]
                                             + registers["r12"] + registers["r11"] + registers["r10"]
                                             + registers["r9"] + registers["r8"] + registers["r7"]
                                             + registers["r6"] + registers["r5"] + registers["r4"]
                                             + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
+            else:
+                return None, None, None, None
         return memory
     else:
         return memory

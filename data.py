@@ -1,12 +1,11 @@
 import re
-import sys
-import Assembly
 import string
 from encoder import Encoder
 from decoder import Decoder
 import dict
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtWidgets
 
+VALID_TEXT = ".text"
 VALID_DATA = ".data"
 VALID_SIZE = ".word"
 VALID_ASCII = ".asciz"
@@ -37,11 +36,31 @@ def is_special_or_digit(word):
     return False
 
 def parse_data(lines):
-    if VALID_DATA in lines:
-        index = lines.index(VALID_DATA)
-        new_list = lines[index:]
-        original_list = lines[:index]
-        return original_list, new_list
+    original_list = []
+    data_lines = []
+    if VALID_DATA in lines or VALID_TEXT in lines:
+        if VALID_DATA in lines and not VALID_TEXT in lines:
+            index_data = lines.index(VALID_DATA)
+            original_list = lines[:index_data]
+            data_lines = lines[:index_data]
+        elif not VALID_DATA in lines and VALID_TEXT in lines:
+            index_text = lines.index(VALID_TEXT)
+            original_list = lines[index_text + 1:]
+        elif VALID_DATA in lines and VALID_TEXT in lines:
+            index_text = lines.index(VALID_TEXT)
+            index_data = lines.index(VALID_DATA)
+            for i in range(index_text + 1, len(lines)):
+                if not lines[i].startswith('.'):
+                    original_list.append(lines[i])
+                else:
+                    break
+            data_lines.append(lines[index_data])
+            for i in range(index_data + 1, len(lines)):
+                if not lines[i].startswith('.'):
+                    data_lines.append(lines[i])
+                else:
+                    break
+        return original_list, data_lines
     else:
         return lines, []
     
@@ -62,9 +81,13 @@ def process_data(data_lines, address):
                 if parts[0].endswith(':') and not result and (parts[1] == VALID_SIZE or VALID_SPACE_MEMORY.match(parts[1]) or parts[1] == VALID_ASCII):
                     address_data_base_str = format(address_data_base, '08x')
                     data_address.append(address_data_base_str)
+                    instruction = parts[1]
                     parts[0] = parts[0].strip(':')
                     label_data.append(parts[0])
                     label_data.append(address_data_base_str)
+                    parts = parts[2:]
+                    if len(parts) == 1 and instruction == VALID_SIZE:
+                        label_data.append("equ")
                     address_data_base += 4
                 else:
                     return None, None, None
@@ -75,23 +98,35 @@ def process_data(data_lines, address):
             if len(parts) > 2:
                 if parts[0].endswith(':') and not result and parts[1] == VALID_SIZE:
                     parts = parts[2:]
-                    for part in parts:
-                        address_data_base_str = format(address_data_base, '08x')
-                        if part == parts[0]:
-                           data_memory.append(address_data_base_str)
-                        if regex_const.match(part):
-                            num = int(part)
+                    if len(parts) == 1:
+                        if regex_const.match(parts[0]):
+                            num = int(parts[0])
                             num_bin_str = Encoder(num)
                             num = Decoder(num_bin_str)
                             num_str = format(num, '08x')
-                            temp.append(num_str)
-                            data_address.append(address_data_base_str)
-                        elif regex_const_hex.match(part):
-                            num = int(part, 16)
+                            data_memory.append(num_str)
+                        elif regex_const_hex.match(parts[0]):
+                            num = int(parts[0], 16)
                             num_str = format(num, '08x')
-                            temp.append(num_str)
-                            data_address.append(address_data_base_str)
-                        address_data_base += 4
+                            data_memory.append(num_str)
+                    else:
+                        for part in parts:
+                            address_data_base_str = format(address_data_base, '08x')
+                            if part == parts[0]:
+                                data_memory.append(address_data_base_str)
+                            if regex_const.match(part):
+                                num = int(part)
+                                num_bin_str = Encoder(num)
+                                num = Decoder(num_bin_str)
+                                num_str = format(num, '08x')
+                                temp.append(num_str)
+                                data_address.append(address_data_base_str)
+                            elif regex_const_hex.match(part):
+                                num = int(part, 16)
+                                num_str = format(num, '08x')
+                                temp.append(num_str)
+                                data_address.append(address_data_base_str)
+                            address_data_base += 4
                 elif parts[0].endswith(':') and not result and VALID_SPACE_MEMORY.match(parts[1]):
                     parts = parts[2:]
                     address_data_base_str = format(address_data_base, '08x')

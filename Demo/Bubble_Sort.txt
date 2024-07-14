@@ -3,7 +3,7 @@ ldr r1, =length
 ldr r1, [r1]
 sub r2, r1, #1
 mov r3, #0
-
+push {r4, r5, r6, r7}
 outer: 
     mov r4, r2
 inner:  
@@ -31,7 +31,7 @@ no_swap:
     blt outer
 
 done_sort:
-   mov r8, #10
+   pop {r4, r5, r6, r7}
 
 .data
 array:  .word 5, 1, 4, 2, 8, -7

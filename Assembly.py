@@ -1,10 +1,7 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtWidgets
 import re
-import sys
 from dict import line_edit_dict, conditon_dict
 import dict
-import GiaoDien
-import ctypes
 from encoder import Encoder
 from decoder import Decoder
 
@@ -240,7 +237,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     binary_str = line_edit.text()
                     hex_int = dict.twos_complement_to_signed(binary_str)
                     binary_str = Encoder(hex_int)
-                    if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and VALID_COMMAND_REGEX_BIT_OP.match(instruction_clean):
+                    if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and not SHIFT_REGEX.match(instruction_clean):
                         t = []
                         if mem[i + 1].lower() == "rrx":
                             num_rrx = conditon_dict.get("c")
@@ -390,6 +387,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
     elif match_instruction_single_data_tranfer:
+        equ = None
         num_result_str = None
         binary_str = ""
         instruction_clean = match_instruction_single_data_tranfer.group(0)
@@ -426,18 +424,32 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     if label in data_labels:
                         index = data_labels.index(label)
                         hex_str = data_labels[index + 1]
+                        if index + 2 < len(data_labels) and data_labels[index + 2] == "equ":
+                            equ = True
                     label = None
                 else:
                     return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
                
             if instruction_clean.lower() == "ldr":
-                result = LDR(hex_str, model)
+                if equ:
+                    int_str = int(hex_str, 16)
+                    result = Encoder(int_str)
+                else:
+                    result = LDR(hex_str, model)
                 arguments.append(result)
             if instruction_clean.lower() == "ldrb":
-                result = LDR_B(hex_str, model_byte)
+                if equ:
+                    int_str = int(hex_str, 16)
+                    result = Encoder(int_str)
+                else:
+                    result = LDR_B(hex_str, model_byte)
                 arguments.append(result)
             if instruction_clean.lower() == "ldrh":
-                result = LDR_H(hex_str, model_byte)
+                if equ:
+                    int_str = int(hex_str, 16)
+                    result = Encoder(int_str)
+                else:
+                    result = LDR_H(hex_str, model_byte)
                 arguments.append(result)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
