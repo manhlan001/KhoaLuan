@@ -5,7 +5,7 @@ import dict
 from encoder import Encoder
 from decoder import Decoder
 
-VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|EOR|ADD|ADC|SUB|SBC|RSB|RSC)", re.IGNORECASE)
+VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP = re.compile(r"(MOV|MVN|AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
 VALID_COMMAND_REGEX_TEST = re.compile(r"(CMP|CMN|TST|TEQ)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP_SPECIAL = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
@@ -464,7 +464,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 flag_T = 1
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
             
-        if len(mem) == 2:
+        elif len(mem) == 2:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
             if bracket_1 and bracket_2:
@@ -478,11 +478,6 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     if regex_const.match(mem[1]):
                         clean_num = mem[1].lstrip('#')
                         num_2 = int(clean_num)
-                        temporary.append(num_2)
-                    elif regex_register.match(mem[1]):
-                        line_edit = line_edit_dict.get(mem[1])
-                        hex_str_reg = line_edit.text()
-                        num_2 = dict.twos_complement_to_signed(hex_str_reg)
                         temporary.append(num_2)
                     else:
                         return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
@@ -594,64 +589,10 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 else:
                     arguments = None
      
-        elif len(mem) > 2 and len(mem) < 5:
+        elif len(mem) == 4:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
-            if bracket_1 and bracket_2:
-                mem[0] = mem[0].strip("[]")
-                reg.append(mem[0])
-                if regex_register.match(mem[0]):
-                    line_edit = line_edit_dict.get(mem[0])
-                    hex_str = line_edit.text()
-                    num_1 = dict.twos_complement_to_signed(hex_str)
-                    temporary.append(num_1)
-                    for i in range(1, len(mem)):
-                        item = mem[i]
-                        if regex_register.match(item):
-                            line_edit = line_edit_dict.get(item)
-                            hex_str_in = line_edit.text()
-                            hex_int_in = dict.twos_complement_to_signed(hex_str_in)
-                            hex_str_in = Encoder(hex_int_in)
-                            if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
-                                temp = []
-                                if mem[i + 1].lower() == "rrx":
-                                    num_rrx = conditon_dict.get("c")
-                                    num_str = num_rrx.text()
-                                    temp.append(hex_str_in)
-                                    temp.append(num_str)
-                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
-                                    break
-                                elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
-                                    if regex_const.match(mem[i + 2]):
-                                        clean_num = mem[i + 2].lstrip('#')
-                                        num = int(clean_num)
-                                        num_str = Encoder(num)
-                                        temp.append(hex_str_in)
-                                        temp.append(num_str)
-                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
-                                        break
-                                    elif regex_register.match(mem[i + 2]):
-                                        num_edit = line_edit_dict.get(mem[i + 2])
-                                        num_str = num_edit.text()
-                                        num = dict.twos_complement_to_signed(num_str)
-                                        num_str = Encoder(num)
-                                        temp.append(hex_str_in)
-                                        temp.append(num_str)
-                                        binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
-                                        break
-                        else:
-                            return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                        
-                    num_2 = Decoder(binary_str_reg[0])
-                    
-                elif not regex_register.match(mem[0]):
-                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                
-                num_result = num_1 + num_2
-                num_result_str = Encoder(num_result)
-                hex_str = format(num_result, '08x')
-            
-            elif bracket_1 and not bracket_2:
+            if bracket_1 and not bracket_2:
                 t = None
                 mem[0] = mem[0].strip("[")
                 if regex_register.match(mem[0]):
@@ -661,30 +602,11 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                     temporary.append(num_1)
                 elif not regex_register.match(mem[0]):
                     return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                if len(mem) == 3:
-                    exclamation = re.compile(r"\!")
-                    exclamation_check = re.search(exclamation, mem[2])
-                    if exclamation_check:
-                        t = 1
-                        reg.append(mem[0])
-                        mem[2] = mem[2].strip("!")
-                    search = re.search(regex_bracket_2, mem[2])
-                    if search:
-                        mem[2] = mem[2].strip("]")
-                    else:
-                        return None, None, label, flag_B, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-                if len(mem) == 4:
-                    exclamation = re.compile(r"\!")
-                    exclamation_check = re.search(exclamation, mem[3])
-                    if exclamation_check:
-                        t = 1
-                        reg.append(mem[0])
-                        mem[3] = mem[3].strip("!")
-                    search = re.search(regex_bracket_2, mem[3])
-                    if search:
-                        mem[3] = mem[3].strip("]")
-                    else:
-                        return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+                search = re.search(regex_bracket_2, mem[3])
+                if search:
+                    mem[3] = mem[3].strip("]")
+                else:
+                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
                 for i in range(1, len(mem)):
                     item = mem[i]
                     if regex_register.match(item):
@@ -694,26 +616,10 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                         hex_str_in = Encoder(hex_int_in)
                         if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
                             temp = []
-                            if mem[i + 1].lower() == "rrx":
-                                num_rrx = conditon_dict.get("c")
-                                num_str = num_rrx.text()
-                                temp.append(hex_str_in)
-                                temp.append(num_str)
-                                binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
-                                break
-                            elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
+                            if mem[i + 1].lower() == "lsl" and i + 2 < len(mem):
                                 if regex_const.match(mem[i + 2]):
                                     clean_num = mem[i + 2].lstrip('#')
                                     num = int(clean_num)
-                                    num_str = Encoder(num)
-                                    temp.append(hex_str_in)
-                                    temp.append(num_str)
-                                    binary_str_reg, _ = Check_Shift(temp, mem[i + 1], line)
-                                    break
-                                elif regex_register.match(mem[i + 2]):
-                                    num_edit = line_edit_dict.get(mem[i + 2])
-                                    num_str = num_edit.text()
-                                    num = int(num_str, 16)
                                     num_str = Encoder(num)
                                     temp.append(hex_str_in)
                                     temp.append(num_str)
@@ -724,65 +630,48 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
                 num_2 = Decoder(binary_str_reg[0])
                 num_result = num_1 + num_2
                 hex_str = format(num_result, '08x')
-                if exclamation_check:
-                    num_result_str = Encoder(num_result)
-                
             elif not bracket_1:
                 return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
-            
+        
             if instruction_clean.lower() == "ldr":
                 result = LDR(hex_str, model)
                 arguments.append(result)
-                if num_result_str:
-                    arguments.append(num_result_str)
             if instruction_clean.lower() == "ldrb":
                 result = LDR_B(hex_str, model_byte)
                 arguments.append(result)
-                if num_result_str:
-                    arguments.append(num_result_str)
             if instruction_clean.lower() == "ldrh":
                 result = LDR_H(hex_str, model_byte)
                 arguments.append(result)
-                if num_result_str:
-                    arguments.append(num_result_str)
             if instruction_clean.lower() == "str":
                 STR(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                arguments = None
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
                 elif(len(reg) == 2):
                     reg[0] = reg[1]
                     reg.pop(1)
-                if num_result_str and t == 1:
-                    arguments.append(num_result_str)
-                else:
-                    arguments = None
             if instruction_clean.lower() == "strb":
                 STR_B(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                arguments = None
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
                 elif(len(reg) == 2):
                     reg[0] = reg[1]
                     reg.pop(1)
-                if num_result_str and t == 1:
-                    arguments.append(num_result_str)
-                else:
-                    arguments = None
             if instruction_clean.lower() == "strh":
                 STR_H(reg, hex_str, address, memory, model, model_2, model_4, model_8, model_byte, model_2_byte, model_4_byte, model_8_byte)
+                arguments = None
                 flag_T = 1
                 if(len(reg) == 1):
                     reg = None
                 elif(len(reg) == 2):
                     reg[0] = reg[1]
                     reg.pop(1)
-                if num_result_str:
-                    arguments.append(num_result_str)
-                else:
-                    arguments = None
         elif len(mem) > 4:
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
     elif match_instruction_multi:
@@ -971,8 +860,6 @@ def Check_Command(temporary, instruction, line):
         arguments, _, _ = SBC(temporary, line)
     elif(instruction.lower() == "rsb"):
         arguments, _, _ = RSB(temporary, line)
-    elif(instruction.lower() == "rsc"):
-        arguments, _, _ = RSB(temporary, line)
     elif(instruction.lower() == "mul"):
         arguments = dict.mul_32(temporary, line)
     elif(instruction.lower() == "mla"):
@@ -1007,9 +894,6 @@ def Check_Command_With_Flag(temporary, instruction, line):
         return arguments, carry, overflow
     elif(instruction.lower() == "rsb"):
         arguments, carry, overflow = RSB(temporary, line)
-        return arguments, carry, overflow
-    elif(instruction.lower() == "rsc"):
-        arguments, carry, overflow = RSC(temporary, line)
         return arguments, carry, overflow
     elif (instruction.lower() == "cmp"):
         arguments, carry, overflow = dict.sub_32(temporary, line)
@@ -1183,25 +1067,6 @@ def RSB(temporary, line):
     temporary[0] = temporary[1]
     temporary[1] = t
     arguments, carry, overflow = dict.sub_32(temporary, line)
-    return arguments, carry, overflow
-
-def RSC(temporary, line):
-    t = []
-    carry_in = conditon_dict.get("c")
-    carry_in = carry_in.text()
-    carry_int = int(carry_in)
-    if carry_int == 0:
-        carry_int = 1
-    elif carry_int == 1:
-        carry_int = 0
-    c = Encoder(carry_int)
-    temp = temporary[0] 
-    temporary[0] = temporary[1]
-    temporary[1] = temp
-    result, _, _ = dict.sub_32(temporary, line)
-    t.append(result[0])
-    t.append(c)
-    arguments, carry, overflow = dict.sub_32(t, line)
     return arguments, carry, overflow
 
 def MLA(temporary, line):

@@ -1,5 +1,4 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-import re
 import sys
 import Assembly
 import data
@@ -816,6 +815,8 @@ class Ui_MainWindow(object):
                 int_memory_line_stacked = Decoder(memory_line_stacked)
                 memory_line_stacked = format(int_memory_line_stacked, '08x')
                 self.memory_current_line.append(memory_line_stacked)
+            if not memory_line and not memory_line_branch and not memory_line_stacked:
+                print(line)
         if data_memory:
             self.memory_current_line.extend(data_memory)
         if len(self.address) != len(self.memory_current_line):
@@ -940,6 +941,8 @@ class Ui_MainWindow(object):
         self.highlight_line("00000000")
         self.stackedCodeWidget.setCurrentIndex(1)
         self.have_compile = True
+        if self.thread.isRunning():
+            self.worker.stop_run_code()
     
     bkpt = []
     def Code_BreakPoint(self):
@@ -1148,6 +1151,8 @@ class Ui_MainWindow(object):
                 c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
+        if self.thread.isRunning():
+            self.worker.stop_run_code()
     def reset_highlight(self):
         for row in range(1, self.model_code.rowCount()):
             item = self.model_code.item(row, 3)

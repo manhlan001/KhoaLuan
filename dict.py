@@ -30,23 +30,18 @@ conditon_dict = {
 }
 
 DataProcessing_opcode_memory_dict = {
-    "and": '0000',
-    "eor": '0001',
-    "sub": '0010',
-    "rsb": '0011',
-    "add": '0100',
-    "adc": '0101',
-    "sbc": '0110',
-    "rsc": '0111',
-    "tst": '1000',
-    "teq": '1001',
-    "cmp": '1010',
-    "cmn": '1011',
-    "orr": '1100',
-    "mov": '1101',
-    "bic": '1110',
-    "mvn": '1111'
+    "and": '0000', "tst": '0000',
+    "bic": '0001',
+    "orr": '0010', "mov": '0010',
+    "orn": '0011', "mvn": '0011',
+    "eor": '0100', "teq": '0100',
+    "add": '1000', "cmn": '1000',
+    "adc": '1010',
+    "sbc": '1011',
+    "sub": '1101',  "cmp": '1101',
+    "rsb": '1110',
 }
+
 
 register_memory_dict = {
     "r0": '0000',
@@ -70,8 +65,8 @@ register_memory_dict = {
 condition_memory_dict = {
     "eq": '0000',
     "ne": '0001',
-    "cs" or "hs": '0010',
-    "cc" or "lo": '0011',
+    "cs": '0010', "hs": '0010',
+    "cc": '0010', "lo": '0011',
     "mi": '0100',
     "pl": '0101',
     "vs": '0110',
@@ -92,6 +87,23 @@ shift_memory_dict = {
     "ror": '11',
     "rrx": '11'
 }
+
+def find_imm8_and_rot(value):
+    i = "0"
+    imm3 = "000"
+    imm8 = "00000000"
+    if value == 0:
+        return i, imm3, imm8
+    for rot in range(16):
+        rotated_value = (value >> (2 * rot)) | (value << (32 - (2 * rot)))
+        rotated_value &= 0xFFFFFFFF
+        if rotated_value <= 0xFF:
+            imm8 = format(rotated_value, "08b")
+            rot = format(rot, "04b")
+            i = rot[0]
+            imm3 = rot[1:]
+            return i, imm3, imm8
+    return i, imm3, imm8
 
 def twos_complement_to_signed(hex_str):
     decimal_value = int(hex_str, 16)

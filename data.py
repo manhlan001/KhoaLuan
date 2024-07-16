@@ -42,7 +42,7 @@ def parse_data(lines):
         if VALID_DATA in lines and not VALID_TEXT in lines:
             index_data = lines.index(VALID_DATA)
             original_list = lines[:index_data]
-            data_lines = lines[:index_data]
+            data_lines = lines[index_data:]
         elif not VALID_DATA in lines and VALID_TEXT in lines:
             index_text = lines.index(VALID_TEXT)
             original_list = lines[index_text + 1:]
@@ -145,9 +145,8 @@ def process_data(data_lines, address):
                             num_str = format(0, '08x')
                             temp.append(num_str)
                             data_address.append(address_data_base_str)
-                            if (i < num_addr - 1) or (num_addr == 1):
-                                address_data_base += 4
-                                address_data_base_str = format(address_data_base, '08x')
+                            address_data_base += 4
+                            address_data_base_str = format(address_data_base, '08x')
                     elif len(parts) == 2:
                         try:
                             if regex_const.match(parts[0]):
@@ -172,9 +171,8 @@ def process_data(data_lines, address):
                                 fill_value_str = format(0, '08x')
                                 temp.append(fill_value_str)
                             data_address.append(address_data_base_str)
-                            if i < num_addr - 1 or num_addr == 1:
-                                address_data_base += 4
-                                address_data_base_str = format(address_data_base, '08x')
+                            address_data_base += 4
+                            address_data_base_str = format(address_data_base, '08x')
                     else:
                         return None, None, None
                 elif parts[0].endswith(':') and not result and parts[1] == VALID_ASCII:

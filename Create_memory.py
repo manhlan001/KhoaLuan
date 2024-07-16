@@ -1,9 +1,7 @@
 import re
-from dict import line_edit_dict, conditon_dict
+from dict import line_edit_dict
 import dict
-from encoder import Encoder, Encoder_12bit, Encoder_5bit
-from decoder import Decoder
-from PyQt6 import QtWidgets 
+from encoder import Encoder_12bit, Encoder_5bit
 
 VALID_COMMAND_REGEX = re.compile(r"(MOV|MVN|LSR|LSL|ASR|ROR|RRX|AND|BIC|ORR|ORN|EOR|ADD|ADC|SUB|SBC|RSB)", re.IGNORECASE)
 VALID_COMMAND_REGEX_BIT_OP_SPECIAL = re.compile(r"(AND|BIC|ORR|ORN|EOR)", re.IGNORECASE)
@@ -84,38 +82,52 @@ def check_memory(self, line, address, lines, data_labels):
             instruction = instruction.lstrip(match_flag.group(0))
             flag = "1"
         if not instruction:
+            imm1 = "0"
+            imm2 = "00"
+            imm3 = "000"
+            imm8 = "00000000"
+            type = "00"
             if SHIFT_REGEX.match(instruction_clean):
-                shift = "00000000"
+                Rm = "0000"
+                Rn = "0000"
                 if len(mem) == 2:
                     if regex_register.match(mem[0]):
-                        Rm = mem[0]
+                        Rm = dict.register_memory_dict.get(mem[0])
                     else:
                         return memory
                     if instruction_clean.lower() == "rrx":
-                        shift = f"{0:05b}" + dict.shift_memory_dict.get(instruction_clean) + '0'
+                        type = dict.shift_memory_dict.get(mem[i + 1])
+                        Immediate_Operand == "1"
                     elif not instruction_clean.lower() == "rrx":
                         if regex_const.match(mem[1]):
                             clean_num = mem[1].lstrip('#')
                             num = int(clean_num)
-                            shift = f"{num:05b}" + dict.shift_memory_dict.get(instruction_clean) + '0'
+                            num_bin = format(num, '05b')
+                            imm3 = num_bin[:3]
+                            imm2 = num_bin[3:]
+                            Immediate_Operand = "1"
                         elif regex_const_hex.match(mem[1]):
                             clean_num = mem[1].lstrip('#')
                             num = dict.twos_complement_to_signed(clean_num)
-                            shift = f"{num:05b}" + dict.shift_memory_dict.get(instruction_clean) + '0'
+                            num_bin = format(num, '05b')
+                            imm3 = num_bin[:3]
+                            imm2 = num_bin[3:]
+                            Immediate_Operand = "1"
                         elif regex_register.match(mem[1]):
-                            shift = dict.register_memory_dict.get(mem[1]) + '0' + dict.shift_memory_dict.get(instruction_clean) + '1'
+                            Rm = dict.register_memory_dict.get(mem[1])
+                            Immediate_Operand = "0"
                         else:
                             return memory
                 else:
                     return memory
-                Rd = dict.register_memory_dict.get(reg)    
-                Rn = "0000"
-                condition_memory = dict.condition_memory_dict.get(condition)
+                Rd = dict.register_memory_dict.get(reg)
                 opcode_memory = "1101"
-                Immediate_Operand = "0"
-                memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + dict.register_memory_dict.get(Rm)
+                if Immediate_Operand == "0":
+                    memory = "111" + "1101" + "0" + "0" + type + flag + Rn + "1111" + Rd + "0000" + Rm
+                elif Immediate_Operand == "1":
+                    Rn = "1111"
+                    memory = "111" + "0101" + "0010" + flag + Rn + "0" + imm3 + Rd + imm2 + type + Rm
             else:
-                shift = "00000000"
                 if len(mem) == 1 and (VALID_COMMAND_REGEX_BIT_OP_SPECIAL.match(instruction_clean) or VALID_COMMAND_REGEX_ARITHMETIC_ADD_SUB.match(instruction_clean)):
                     mem.append(reg)
                     mem.reverse()
@@ -124,28 +136,27 @@ def check_memory(self, line, address, lines, data_labels):
                     if regex_const.match(item):
                         clean_num = item.lstrip('#')
                         num = int(clean_num)
-                        num_memory = dict.process_binary(num)
+                        imm1, imm3, imm8 = dict.find_imm8_and_rot(num)
                         Immediate_Operand = "1"
                     elif regex_const_hex.match(item):
                         clean_num = item.lstrip('#')
                         num = dict.twos_complement_to_signed(clean_num)
-                        num_memory = dict.process_binary(num)
+                        imm1, imm3, imm8 = dict.find_imm8_and_rot(num)
                         Immediate_Operand = "1"
                     elif regex_register.match(item):
                         reg_memory.append(item)
                         Immediate_Operand = "0"
                         if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]) and not SHIFT_REGEX.match(instruction_clean):
                             if mem[i + 1].lower() == "rrx":
-                                shift = f"{0:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                                type = dict.shift_memory_dict.get(mem[i + 1])
                                 break
                             elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
                                 if regex_const.match(mem[i + 2]):
                                     clean_num = mem[i + 2].lstrip('#')
                                     num = int(clean_num)
-                                    shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                    break
-                                elif regex_register.match(mem[i + 2]):
-                                    shift = dict.register_memory_dict.get(mem[i + 2]) + '0' + dict.shift_memory_dict.get(mem[i + 1]) + '1'
+                                    num_bin = format(num, '05b')
+                                    imm3 = num_bin[:3]
+                                    imm2 = num_bin[3:]
                                     break
                             else:
                                 return memory
@@ -159,16 +170,11 @@ def check_memory(self, line, address, lines, data_labels):
                 elif len(reg_memory) == 2:
                     Rn = dict.register_memory_dict.get(reg_memory[0])
                     Rm = dict.register_memory_dict.get(reg_memory[1])
-                condition_memory = dict.condition_memory_dict.get(condition)
                 opcode_memory = dict.DataProcessing_opcode_memory_dict.get(instruction_clean)
                 if Immediate_Operand == "0":
-                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + shift + Rm
+                    memory = "11101" + '01' + opcode_memory + flag + Rn + "0" + imm3 + Rd + imm2 + type + Rm
                 elif Immediate_Operand == "1":
-                    if num_memory:
-                        memory = condition_memory + '00' + Immediate_Operand + opcode_memory + flag + Rn + Rd + num_memory
-                    else:
-                        QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + str(num) + ") after fixup")
-                        return memory
+                    memory = "11110" + imm1 + "0" + opcode_memory + flag + Rn + "0" + imm3 + Rd + imm8
         else:
             return memory
         return memory
@@ -181,67 +187,69 @@ def check_memory(self, line, address, lines, data_labels):
             condition = match_condition.group(0)
             instruction = re.sub(condition, "", instruction)
         if not instruction:
-            shift = "00000000"
+            imm1 = "0"
+            imm2 = "00"
+            imm3 = "000"
+            imm8 = "00000000"
+            type = "00"
+            flag = "1"
             for i in range(len(mem)):
                 item = mem[i]
                 if regex_const.match(item):
                     clean_num = item.lstrip('#')
                     num = int(clean_num)
-                    num_memory = dict.process_binary(num)
+                    imm1, imm3, imm8 = dict.find_imm8_and_rot(num)
                     Immediate_Operand = "1"
                 elif regex_const_hex.match(item):
                     clean_num = item.lstrip('#')
                     num = dict.twos_complement_to_signed(clean_num)
-                    num_memory = dict.process_binary(num)
+                    imm1, imm3, imm8 = dict.find_imm8_and_rot(num)
                     Immediate_Operand = "1"
                 elif regex_register.match(item):
                     reg_memory.append(item)
                     Immediate_Operand = "0"
                     if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
                         if mem[i + 1].lower() == "rrx":
-                            shift = f"{0:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                            type = dict.shift_memory_dict.get(mem[i + 1])
                             break
                         elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
                             if regex_const.match(mem[i + 2]):
                                 clean_num = mem[i + 2].lstrip('#')
-                                num = int(clean_num)
-                                shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                                num_bin = format(num, '05b')
+                                imm3 = num_bin[:3]
+                                imm2 = num_bin[3:]
                                 break
-                            elif regex_register.match(mem[i + 2]):
-                                shift = dict.register_memory_dict.get(mem[i + 2]) + '0' + dict.shift_memory_dict.get(mem[i + 1]) + '1'
-                                break
+                            else:
+                                return memory
                         else:
                             return memory
                 else:
                     return memory
             Rd = dict.register_memory_dict.get(reg)    
-            Rn = "0000"    
+            Rn = "0000"
+            Rm = "0000"
             if len(reg_memory) == 1:
                 Rm = reg_memory[0]
             elif len(reg_memory) == 2:
                 Rn = dict.register_memory_dict.get(reg_memory[0])
                 Rm = reg_memory[1]
-            condition_memory = dict.condition_memory_dict.get(condition)
+            Rm = dict.register_memory_dict.get(Rm)
             opcode_memory = dict.DataProcessing_opcode_memory_dict.get(instruction_clean)
             if Immediate_Operand == "0":
-                memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + shift + dict.register_memory_dict.get(Rm)
+                memory = "11101" + '01' + opcode_memory + flag + Rn + "0" + imm3 + Rd + imm2 + type + Rm
             elif Immediate_Operand == "1":
-                if num_memory:
-                    memory = condition_memory + '00' + Immediate_Operand + opcode_memory + "1" + Rn + Rd + num_memory
-                else:
-                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + str(num) + ") after fixup")
-                    return memory
+                memory = "11110" + imm1 + "0" + opcode_memory + flag + Rn + "0" + imm3 + Rd + imm8
         else:
             return memory
         return memory
     
     elif match_instruction_single_data_tranfer:
         P = U = B = W = L = "0"
-        Immediate_Operand = "1"
+        size = "00"
         Rm = "0000"
         Rn = "0000"
-        condition_memory = dict.condition_memory_dict.get(condition)
-        shift = "00000000"
+        imm2 = "00"
+        imm8 = "00000000"
         num_memory = "000000000000"
         instruction_clean = match_instruction_single_data_tranfer.group(0)
         instruction = re.sub(match_instruction_single_data_tranfer.group(0), "", instruction)
@@ -253,6 +261,24 @@ def check_memory(self, line, address, lines, data_labels):
             instruction_clean = instruction_clean + "b"
         if instruction.lower() == "h":
             instruction_clean = instruction_clean + "h"
+        if instruction_clean.lower() == "ldr":
+            L = "1"
+            size = "10"
+        if instruction_clean.lower() == "str":
+            L = "0"
+            size = "10"
+        if instruction_clean.lower() == "ldrb":
+            L = "1"
+            size = "00"
+        if instruction_clean.lower() == "strb":
+            L = "0"
+            size = "00"
+        if instruction_clean.lower() == "ldrh":
+            L = "1"
+            size = "01"
+        if instruction_clean.lower() == "strh":
+            L = "0"
+            size = "01"
         regex_bracket_1 = re.compile(r"\[", re.IGNORECASE)
         regex_bracket_2 = re.compile(r"\]", re.IGNORECASE)
         if len(mem) == 1:
@@ -279,31 +305,8 @@ def check_memory(self, line, address, lines, data_labels):
                         num_memory = Encoder_12bit(num_1 - num_2)
                 else:
                     return memory
-            if instruction_clean.lower() == "ldr":
-                L = "1"
-                B = "0"
-            if instruction_clean.lower() == "str":
-                L = "0"
-                B = "0"
-            if instruction_clean.lower() == "ldrb":
-                L = "1"
-                B = "1"
-            if instruction_clean.lower() == "strb":
-                L = "0"
-                B = "1"
             Rd = dict.register_memory_dict.get(reg)
-            Rm = "0000"
-            P = U = "1"
-            W = "0"
-            if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
-                if instruction_clean.lower() == "ldrh":
-                    L = "1"
-                if instruction_clean.lower() == "strh":
-                    L = "0"
-                memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
-                return memory
-            
-            memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
+            memory = "11111" + "00" + "0" + "1" + size + L + Rn + Rd + num_memory
                 
         if len(mem) == 2:
             bracket_1 = re.search(regex_bracket_1, mem[0])
@@ -315,27 +318,15 @@ def check_memory(self, line, address, lines, data_labels):
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
                     if regex_const.match(mem[1]):
-                        Immediate_Operand == "0"
                         clean_num = mem[1].lstrip('#')
                         num = int(clean_num)
                         if num >= 0:
                             U = "1"
                         elif num < 0:
                             U = "0"
-                        num_memory = Encoder_12bit(num)
-                    elif regex_const_hex.match(mem[1]):
-                        Immediate_Operand == "0"
-                        clean_num = mem[1].lstrip('#')
-                        num = dict.twos_complement_to_signed(clean_num)
-                        if num >= 0:
-                            U = "1"
-                        elif num < 0:
-                            U = "0"
-                        num_memory = Encoder_12bit(num)
-                    elif regex_register.match(mem[1]):
-                        Immediate_Operand == "1"
-                        U = "1"
-                        Rm = dict.register_memory_dict.get(mem[1])
+                        imm8 = format(num, "08b")
+                    else:
+                        return memory
                 elif not regex_register.match(mem[0]):
                     return memory
                 
@@ -355,224 +346,85 @@ def check_memory(self, line, address, lines, data_labels):
                         W = "1"
                         mem[1] = mem[1].strip('!')
                         if regex_const.match(mem[1]):
-                            Immediate_Operand == "0"
                             clean_num = mem[1].lstrip('#')
                             num = int(clean_num)
                             if num >= 0:
-                                U = "1"
+                                num_memory = Encoder_12bit(num)
+                                memory = "11111" + "00" + "0" + "1" + size + L + Rn + Rd + num_memory
+                                return memory
                             elif num < 0:
                                 U = "0"
-                            num_memory = Encoder_12bit(num)
-                        elif regex_const_hex.match(mem[1]):
-                            Immediate_Operand == "0"
-                            clean_num = mem[1].lstrip('#')
-                            num = dict.twos_complement_to_signed(clean_num)
-                            if num >= 0:
-                                U = "1"
-                            elif num < 0:
-                                U = "0"
-                            num_memory = Encoder_12bit(num)
+                            imm8 = format(num, "08b")
                         elif regex_register.match(mem[1]):
-                            Immediate_Operand == "1"
                             Rm = dict.register_memory_dict.get(mem[1])
+                            memory = "11111" + "00" + "0" + "1" + size + L + Rn + Rd + "0" + "00000" + imm2 + Rm
+                            return memory
                         else:
                             return memory
                     elif not exclamation_check:
                         W = "0"
-                        mem[1] = mem[1].strip('!')
                         if regex_const.match(mem[1]):
-                            Immediate_Operand == "0"
                             clean_num = mem[1].lstrip('#')
                             num = int(clean_num)
                             if num >= 0:
                                 U = "1"
                             elif num < 0:
                                 U = "0"
-                            num_memory = Encoder_12bit(num)
+                            imm8 = format(num, "08b")
                         elif regex_const_hex.match(mem[1]):
-                            Immediate_Operand == "0"
                             clean_num = mem[1].lstrip('#')
                             num = dict.twos_complement_to_signed(clean_num)
                             if num >= 0:
                                 U = "1"
                             elif num < 0:
                                 U = "0"
-                            num_memory = Encoder_12bit(num)
+                            imm8 = format(num, "08b")
                         elif regex_register.match(mem[1]):
-                            Immediate_Operand == "1"
                             U = "1"
                             Rm = dict.register_memory_dict.get(mem[1])
                         else:
                             return memory
                 elif not bracket_mem:
                     return memory
-                
             elif not bracket_1:
                 return memory
-            
-            if instruction_clean.lower() == "ldr":
-                L = "1"
-                B = "0"
-            if instruction_clean.lower() == "str":
-                L = "0"
-                B = "0"
-            if instruction_clean.lower() == "ldrb":
-                L = "1"
-                B = "1"
-            if instruction_clean.lower() == "strb":
-                L = "0"
-                B = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
-            if Immediate_Operand == "0":
-                if num_memory:
-                    if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
-                        if instruction_clean.lower() == "ldrh":
-                            L = "1"
-                        if instruction_clean.lower() == "strh":
-                            L = "0"
-                        num = Decoder(num_memory)
-                        num_hex = format(num, '08x')
-                        num_split = dict.split_hex(num_hex)
-                        num_split = num_split.split()
-                        num_split.reverse()
-                        offset_high = num_split[0] + num_split[1]
-                        offset_low = num_split[2] + num_split[3]
-                        memory = condition_memory + "000" + P + U + "1" + W + L + Rn + Rd + offset_high + "1011" + offset_low
-                        return memory
-                    memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + num_memory
-                else:
-                    QtWidgets.QMessageBox.critical(None, "Lỗi", "invalid constant (" + num + ") after fixup")
-                    return memory
-            elif Immediate_Operand == "1":
-                if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
-                    if instruction_clean.lower() == "ldrh":
-                        L = "1"
-                    if instruction_clean.lower() == "strh":
-                        L = "0"
-                    memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
-                    return memory
+            memory = "11111" + "00" + "0" + "0" + size + L + Rn + Rd + "1" + P + U + W + imm8
                 
-                memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm
-                
-        elif len(mem) > 2 and len(mem) < 5:
+        elif len(mem) == 4:
             bracket_1 = re.search(regex_bracket_1, mem[0])
             bracket_2 = re.search(regex_bracket_2, mem[0])
-            if bracket_1 and bracket_2:
-                mem[0] = mem[0].strip("[]")
-                P = "0"
-                reg.append(mem[0])
-                if regex_register.match(mem[0]):
-                    reg_memory.append(mem[0])
-                    for i in range(1, len(mem)):
-                        item = mem[i]
-                        if regex_register.match(item):
-                            Immediate_Operand == "1"
-                            Rm = dict.register_memory_dict.get(item)
-                            if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
-                                if mem[i + 1].lower() == "rrx":
-                                    shift = f"{0:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                    break
-                                elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
-                                    if regex_const.match(mem[i + 2]):
-                                        clean_num = mem[i + 2].lstrip('#')
-                                        num = int(clean_num)
-                                        shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                        break
-                                    elif regex_const_hex.match(mem[i + 2]):
-                                        clean_num = mem[i + 2].lstrip('#')
-                                        num = dict.twos_complement_to_signed(clean_num)
-                                        shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                        break    
-                                    elif regex_register.match(mem[i + 2]):
-                                        shift = dict.register_memory_dict.get(mem[i + 2]) + '0' + dict.shift_memory_dict.get(mem[i + 1]) + '1'
-                                        break
-                        else:
-                            return memory
-                elif not regex_register.match(mem[0]):
-                    return memory
-            
-            elif bracket_1 and not bracket_2:
+            if bracket_1 and not bracket_2:
                 mem[0] = mem[0].strip("[")
                 P = "1"
                 if regex_register.match(mem[0]):
                     reg_memory.append(mem[0])
                 elif not regex_register.match(mem[0]):
                     return memory
-                if len(mem) == 3:
-                    exclamation = re.compile(r"\!")
-                    exclamation_check = re.search(exclamation, mem[2])
-                    if exclamation_check:
-                        W = "1"
-                        reg.append(mem[0])
-                        mem[2] = mem[2].strip("!")
-                    search = re.search(regex_bracket_2, mem[2])
-                    if search:
-                        mem[2] = mem[2].strip("]")
-                    else:
-                        return memory
-                if len(mem) == 4:
-                    exclamation = re.compile(r"\!")
-                    exclamation_check = re.search(exclamation, mem[3])
-                    if exclamation_check:
-                        W = "1"
-                        reg.append(mem[0])
-                        mem[3] = mem[3].strip("!")
-                    search = re.search(regex_bracket_2, mem[3])
-                    if search:
-                        mem[3] = mem[3].strip("]")
-                    else:
-                        return memory
+                search = re.search(regex_bracket_2, mem[3])
+                if search:
+                    mem[3] = mem[3].strip("]")
+                else:
+                    return memory
                 for i in range(1, len(mem)):
                     item = mem[i]
                     if regex_register.match(item):
-                        Immediate_Operand == "1"
                         Rm = dict.register_memory_dict.get(item)
-                        if i + 1 < len(mem) and SHIFT_REGEX.match(mem[i + 1]):
-                            if mem[i + 1].lower() == "rrx":
-                                shift = f"{0:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
+                        if mem[i + 1].lower() == "lsl" and i + 2 < len(mem):
+                            if regex_const.match(mem[i + 2]):
+                                clean_num = mem[i + 2].lstrip('#')
+                                num = int(clean_num)
+                                imm2 = format(num, "02b")
                                 break
-                            elif not mem[i + 1].lower() == "rrx" and i + 2 < len(mem):
-                                if regex_const.match(mem[i + 2]):
-                                    clean_num = mem[i + 2].lstrip('#')
-                                    num = int(clean_num)
-                                    shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                    break
-                                elif regex_const_hex.match(mem[i + 2]):
-                                    clean_num = mem[i + 2].lstrip('#')
-                                    num = dict.twos_complement_to_signed(clean_num)
-                                    shift = f"{num:05b}" + dict.shift_memory_dict.get(mem[i + 1]) + '0'
-                                    break
-                                elif regex_register.match(mem[i + 2]):
-                                    shift = dict.register_memory_dict.get(mem[i + 2]) + '0' + dict.shift_memory_dict.get(mem[i + 1]) + '1'
-                                    break
                     else:
-                        return memory     
-            elif not bracket_1:
+                        return memory
+            else:
                 return memory
-            if instruction_clean.lower() == "ldr":
-                L = "1"
-                B = "0"
-            if instruction_clean.lower() == "str":
-                L = "0"
-                B = "0"
-            if instruction_clean.lower() == "ldrb":
-                L = "1"
-                B = "1"
-            if instruction_clean.lower() == "strb":
-                L = "0"
-                B = "1"
             U = "1"
             Rd = dict.register_memory_dict.get(reg)
             Rn = dict.register_memory_dict.get(reg_memory[0])
-            if instruction_clean.lower() == "ldrh" or instruction_clean.lower() == "strh":
-                if instruction_clean.lower() == "ldrh":
-                    L = "1"
-                if instruction_clean.lower() == "strh":
-                    L = "0"
-                memory = condition_memory + "000" + P + U + "0" + W + L + Rn + Rd + "00001011" + Rm
-                return memory
-            memory = condition_memory + "01" + Immediate_Operand + P + U + B + W + L + Rn + Rd + shift + Rm  
+            memory = "11111" + "00" + "0" + "0" + size + L + Rn + Rd + "0" + "00000" + imm2 + Rm
         elif len(mem) > 4:
             return memory
         return memory
@@ -615,39 +467,55 @@ def check_memory(self, line, address, lines, data_labels):
                     reg_memory.append(item)
                 else:
                     return memory
-            reg_memory.reverse()
-            condition_memory = dict.condition_memory_dict.get(condition)    
+            reg_memory.reverse() 
             if u != None and (l == 1 or instruction_clean.lower() == "div"):
+                op1 = "000"
+                op2 = "0000"
                 if instruction_clean.lower() == "div":
-                    A = "1"
                     Rd = dict.register_memory_dict.get(reg)    
-                    Rn = "1111"
-                    Rm = dict.register_memory_dict.get(reg_memory[0])
-                    Rs = dict.register_memory_dict.get(reg_memory[1])
-                    memory = condition_memory + "011100" + u + A + Rd + Rn + Rs + "1001" + Rm
+                    Rs = "1111"
+                    Rn = dict.register_memory_dict.get(reg_memory[0])
+                    Rm = dict.register_memory_dict.get(reg_memory[1])
+                    if u == "0":
+                        op1 = "011"
+                        op2 = "1111"
+                    elif u == "1":
+                        op1 = "001"
+                        op2 = "1111"
+                    memory = "111" + "1101" + "11" + op1 + Rn + Rs + Rd + op2 + Rm
                 else:
                     RdLo = dict.register_memory_dict.get(reg)  
                     RdHi = dict.register_memory_dict.get(reg_memory[0])
-                    Rm = dict.register_memory_dict.get(reg_memory[1])
-                    Rs = dict.register_memory_dict.get(reg_memory[2])
-                    if instruction_clean.lower() == "mla" or instruction_clean.lower() == "mls":
-                        A = "1"
-                    else:
-                        A = "0"
-                    memory = condition_memory + "00001" + u + A + flag + RdLo + RdHi + Rs + "1001" + Rm
+                    Rn = dict.register_memory_dict.get(reg_memory[1])
+                    Rm = dict.register_memory_dict.get(reg_memory[2])
+                    if instruction_clean.lower() == "mla":
+                        if u == "0":
+                            op1 = "110"
+                            op2 = "0000"
+                        elif u == "1":
+                            op1 = "100"
+                            op2 = "0000"
+                    elif instruction_clean.lower() == "mul":
+                        if u == "0":
+                            op1 = "010"
+                            op2 = "0000"
+                        elif u == "1":
+                            op1 = "000"
+                            op2 = "0000"
+                    memory = "111" + "1101" + "11" + op1 + Rn + RdLo + RdHi + op2 + Rm
             else:
                 Rd = dict.register_memory_dict.get(reg)    
-                Rn = "0000"
-                if instruction_clean.lower() == "mla" or instruction_clean.lower() == "mls":
+                Ra = "0000"
+                if instruction_clean.lower() == "mls":
                     A = "1"
-                    Rm = dict.register_memory_dict.get(reg_memory[0])
-                    Rs = dict.register_memory_dict.get(reg_memory[1])
-                    Rn = dict.register_memory_dict.get(reg_memory[2])
+                    Rn = dict.register_memory_dict.get(reg_memory[0])
+                    Rm = dict.register_memory_dict.get(reg_memory[1])
+                    Ra = dict.register_memory_dict.get(reg_memory[2])
                 else:
                     A = "0"
-                    Rm = dict.register_memory_dict.get(reg_memory[0])
-                    Rs = dict.register_memory_dict.get(reg_memory[1])
-                memory = condition_memory + "000000" + A + flag + Rd + Rn + Rs + "1001" + Rm
+                    Rn = dict.register_memory_dict.get(reg_memory[0])
+                    Rm = dict.register_memory_dict.get(reg_memory[1])
+                memory = "11111" + "0110" + "000" + Rn + Ra + Rd + "000" + A + Rm
         else:
             return memory
         return memory
@@ -659,8 +527,9 @@ def check_memory(self, line, address, lines, data_labels):
         if match_condition:
             condition = match_condition.group(0)
             instruction = re.sub(condition, "", instruction)
-        condition_memory = dict.condition_memory_dict.get(condition)
         shift_imm5 = "00000"
+        imm3 = "000"
+        imm2 = "00"
         sh = "0"
         if not instruction:
             if instruction_clean.lower() == "ssat":
@@ -677,8 +546,10 @@ def check_memory(self, line, address, lines, data_labels):
                     const = const.lstrip('#')
                     const = int(const) - sat_num
                     sat = Encoder_5bit(const)
+                    imm3 = sat[:3]
+                    imm2 = sat[3:]
                     Rn = dict.register_memory_dict.get(reg_const)
-                    memory = condition_memory + "01101" + u + "1" + sat + Rd + shift_imm5 + sh + "01" + Rn
+                    memory = "11110" + "0" + "11" + u + "0" + sh + "0" + Rn + "0" + imm3 + Rd + imm2 + "0" + shift_imm5
                 else:
                     return memory
             elif len(mem) == 3 or len(mem) == 4:
@@ -689,6 +560,8 @@ def check_memory(self, line, address, lines, data_labels):
                     const = const.lstrip('#')
                     const = int(const) - sat_num
                     sat = Encoder_5bit(const)
+                    imm3 = sat[:3]
+                    imm2 = sat[3:]
                     Rn = dict.register_memory_dict.get(reg_const)
                     if SHIFT_REGEX.match(shift):
                         if shift.lower() == "rrx":
@@ -703,7 +576,7 @@ def check_memory(self, line, address, lines, data_labels):
                                 num_str = num_edit.text()
                                 num = int(num_str, 16)
                                 shift_imm5 = Encoder_5bit(num)
-                    memory = condition_memory + "01101" + u + "1" + sat + Rd + shift_imm5 + sh + "01" + Rn
+                    memory = "11110" + "0" + "11" + u + "0" + sh + "0" + Rn + "0" + imm3 + Rd + imm2 + "0" + shift_imm5
                 else:
                     return memory
             else:
@@ -711,7 +584,6 @@ def check_memory(self, line, address, lines, data_labels):
         else:
             return memory
         return memory
-    
     else:
         return memory
     
@@ -735,20 +607,24 @@ def memory_branch(self, line, lines, address, labels):
                 return memory
             memory = condition_memory + "0001" + "0010" + "1111" + "1111" + "1111" + "0001" + Rn
         else:
-            offset = get_memory_offset(line, parts[1], lines, address, labels)  
+            offset = get_memory_offset(line, parts[1], lines, address, labels)
+            S = offset[0]
+            J2 = offset[1]
+            J1 = offset[2]
+            imm6 = offset[3:9]
+            imm11 = offset[9:]
             if instruction.lower() == "b":
                 L = "0"
-                memory = condition_memory + "101" + L + offset
             elif instruction.lower() == "bl":
                 L = "1"
-                memory = condition_memory + "101" + L + offset
+            memory = "11110" + S + condition_memory + imm6 + "1" + L + J1 + "0" + J2 + imm11
         return memory
     else:
         return memory
     
 def get_memory_offset(current_line, current_label, lines, address, labels):
     current = target = None
-    result_str = "000000000000000000000000"
+    result_str = "00000000000000000000"
     mapping = {key: value for key, value in zip(lines, address)}
     if current_label in labels:
         target = mapping.get(labels[current_label][0])
@@ -757,16 +633,16 @@ def get_memory_offset(current_line, current_label, lines, address, labels):
         current_int = dict.twos_complement_to_signed(current)
         target_int = dict.twos_complement_to_signed(target)
         result = int((target_int - current_int - 8) / 4)
-        result_str = Encoder_24bit(result)
+        result_str = Encoder_20bit(result)
     return result_str
 
-def Encoder_24bit(number):
+def Encoder_20bit(number):
     if number >= 0:
-        binary_str = bin(number)[2:].zfill(24)
+        binary_str = bin(number)[2:].zfill(20)
     else:
-        binary_str = bin((1 << 24) + number)[2:].zfill(24)
-    if len(binary_str) > 24:
-        binary_str = binary_str[-24:]
+        binary_str = bin((1 << 20) + number)[2:].zfill(20)
+    if len(binary_str) > 20:
+        binary_str = binary_str[-20:]
     return binary_str
 
 def memory_stacked(self, line, lines, address, labels):
@@ -780,7 +656,6 @@ def memory_stacked(self, line, lines, address, labels):
         condition = match_condition.group(0)
         instruction = re.sub(condition, "", instruction)
     if VALID_COMMAND_STACKED.match(instruction):
-        condition_memory = dict.condition_memory_dict.get(condition)
         registers = {
                         "r0": "0", "r1": "0", "r2": "0", "r3": "0",
                         "r4": "0", "r5": "0", "r6": "0", "r7": "0",
@@ -793,21 +668,20 @@ def memory_stacked(self, line, lines, address, labels):
                 mems[-1] = mems[-1].strip('}')
                 if len(mems) == 1:
                     Rt = dict.register_memory_dict.get(mem[0])
-                    push = "010" + "1" + "0" + "0" + "1" + "0" + "1101"
-                    memory = condition_memory + push + Rt + "000000000100"
+                    push = "11111" + "00" + "0" + "0" + "10" + "0" + "1101"
+                    memory = push + Rt + "1" + "101" + "00000100"
                 else:
-                    push = "100100" + "1" + "0" + "1101"
+                    push = "11101" + "00" + "100" + "1" + "0" + "1101"
                     for mem in mems:
                         if regex_register.match(mem):
                             if mem in registers:
                                 registers[mem] = "1"
                         else:
                             return memory
-                    memory = condition_memory + push + (registers["pc"] + registers["lr"] + registers["sp"]
-                                            + registers["r12"] + registers["r11"] + registers["r10"]
-                                            + registers["r9"] + registers["r8"] + registers["r7"]
-                                            + registers["r6"] + registers["r5"] + registers["r4"]
-                                            + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
+                    memory = push + ("0" + registers["lr"] + "0" + registers["r12"] + registers["r11"] + registers["r10"]
+                                    + registers["r9"] + registers["r8"] + registers["r7"]
+                                    + registers["r6"] + registers["r5"] + registers["r4"]
+                                    + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
             else:
                 return None, None, None, None
             
@@ -817,21 +691,20 @@ def memory_stacked(self, line, lines, address, labels):
                 mems[-1] = mems[-1].strip('}')
                 if len(mems) == 1:
                     Rt = dict.register_memory_dict.get(mem[0])
-                    pop = "010" + "0" + "1" + "0" + "0" + "1" + "1101"
-                    memory = condition_memory + pop + Rt + "000000000100"
+                    pop = "11111" + "00" + "0" + "0" + "10" + "1" + "1101"
+                    memory = pop + Rt + "1" + "011" + "00000100"
                 else:
-                    pop = "100010" + "1" + "1" + "1101"
+                    pop = "11101" + "00" + "010" + "1" + "1" + "1101"
                     for mem in mems:
                         if regex_register.match(mem):
                             if mem in registers:
                                 registers[mem] = "1"
                         else:
                             return memory
-                    memory = condition_memory + pop + (registers["pc"] + registers["lr"] + registers["sp"]
-                                            + registers["r12"] + registers["r11"] + registers["r10"]
-                                            + registers["r9"] + registers["r8"] + registers["r7"]
-                                            + registers["r6"] + registers["r5"] + registers["r4"]
-                                            + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
+                    memory = pop + (registers["pc"] + registers["lr"] + "0" + registers["r12"] + registers["r11"] + registers["r10"]
+                                    + registers["r9"] + registers["r8"] + registers["r7"]
+                                    + registers["r6"] + registers["r5"] + registers["r4"]
+                                    + registers["r3"] + registers["r2"] + registers["r1"] + registers["r0"])
             else:
                 return None, None, None, None
         return memory
