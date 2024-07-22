@@ -15,6 +15,7 @@ VALID_COMMAND_SINGLE_DATA_TRANFER = re.compile(r"(LDR|STR|LDRB|STRB)", re.IGNORE
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL|BX)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
 VALID_COMMAND_SATURATE = re.compile(r"(SSAT|USAT)", re.IGNORECASE)
+VALID_COMMAND_REVERSE = re.compile(r"(REV|RBIT)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -197,6 +198,7 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
     match_instruction_saturate = re.search(VALID_COMMAND_SATURATE, instruction)
+    match_instruction_reverse = re.search(VALID_COMMAND_REVERSE, instruction)
     if match_instruction:
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
@@ -808,6 +810,32 @@ def check_assembly_line(self, lines, line, address, memory, data_labels, model, 
         else:
             return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
         return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+    
+    elif match_instruction_reverse:
+        instruction_clean = match_instruction_reverse.group(0)
+        instruction = re.sub(match_instruction_reverse.group(0), "", instruction)
+        match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+        if match_condition:
+            condition = match_condition.group(0)
+            c = dict.check_condition(condition)
+            instruction = re.sub(condition, "", instruction)
+        elif not match_condition:
+            c = dict.check_condition(condition)
+        if not instruction:
+            if len(mem) == 1:
+                temporary = []
+                if regex_register.match(mem[0]):
+                    line_edit = line_edit_dict.get(mem[0])
+                    binary_str = line_edit.text()
+                    temporary.append(binary_str)
+                    arguments = Check_Command(temporary, instruction_clean, line)
+                else:
+                    return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+            else:
+                return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        else:
+            return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
+        return reg, arguments, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     else:
         return None, None, label, flag_B, flag_N, flag_Z, flag_C, flag_V, flag_T
     
@@ -860,6 +888,10 @@ def Check_Command(temporary, instruction, line):
         arguments, _, _ = SBC(temporary, line)
     elif(instruction.lower() == "rsb"):
         arguments, _, _ = RSB(temporary, line)
+    elif(instruction.lower() == "rev"):
+        arguments = REV(temporary, line)
+    elif(instruction.lower() == "rbit"):
+        arguments = RBIT(temporary, line)
     elif(instruction.lower() == "mul"):
         arguments = dict.mul_32(temporary, line)
     elif(instruction.lower() == "mla"):
@@ -1068,6 +1100,26 @@ def RSB(temporary, line):
     temporary[1] = t
     arguments, carry, overflow = dict.sub_32(temporary, line)
     return arguments, carry, overflow
+
+def REV(temporary, line):
+    result = []
+    num = int(temporary[0], 16)
+    num_hex = format(num, "08x")
+    result_hex = dict.split_hex(num_hex)
+    result_hex = result_hex.split()
+    result_hex = "".join(byte for byte in result_hex)
+    result_int = int(result_hex, 16)
+    result_bin = Encoder(result_int)
+    result.append(result_bin)
+    return result
+
+def RBIT(temporary, line):
+    result = []
+    num = int(temporary[0], 16)
+    bin_str = Encoder(num)
+    result_bin = bin_str[::-1]
+    result.append(result_bin)
+    return result
 
 def MLA(temporary, line):
     if len(temporary) != 3:

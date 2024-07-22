@@ -1,9 +1,10 @@
+.text
+push {r0, r1, r2, r3, r4, r5, r6, r7}
 ldr r0, =array
 ldr r1, =length
 ldr r1, [r1]
 sub r2, r1, #1
 mov r3, #0
-push {r4, r5, r6, r7}
 outer: 
     mov r4, r2
 inner:  
@@ -31,7 +32,7 @@ no_swap:
     blt outer
 
 done_sort:
-   pop {r4, r5, r6, r7}
+   pop {r0, r1, r2, r3, r4, r5, r6, r7}
 
 .data
 array:  .word 5, 1, 4, 2, 8, -7

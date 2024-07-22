@@ -1,6 +1,6 @@
 .text
 main:
-    push {r4, r5, r6}
+    push {r0, r1, r2, r3, r4, r5, r6}
 
     ldr r0, =list
     ldr r1, =length
@@ -40,7 +40,7 @@ endfor2:
     b for1
 
 end:
-    pop {r4, r5, r6}
+    pop {r0, r1, r2, r3, r4, r5, r6}
 
 .data
 list: .word 5, 1, 4, 2, 8, -7

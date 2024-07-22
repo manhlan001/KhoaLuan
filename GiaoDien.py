@@ -853,8 +853,7 @@ class Ui_MainWindow(object):
         return False
         
     def show_code_edit(self):
-        if self.thread.isRunning():
-            self.worker.stop_run_code()
+        self.worker.stop_run_code()
         self.stackedCodeWidget.setCurrentIndex(0)
 
     have_compile = False
@@ -1116,13 +1115,12 @@ class Ui_MainWindow(object):
                 position = lines.index(label)
                 self.current_line_index = position
             if self.current_line_index >= len(lines):
+                self.worker.stop_run_code()
                 self.reset_highlight()
                 for row in range(1, self.model_code.rowCount()):
                     item = self.model_code.item(row, 3)
                     if item != None:
                         item.setBackground(QtGui.QColor("#7fffd4"))
-                if self.thread.isRunning():
-                    self.worker.stop_run_code()
             else:
                 pc_binary = self.address[self.current_line_index]
                 self.highlight_line(pc_binary)
@@ -1151,7 +1149,7 @@ class Ui_MainWindow(object):
                 c_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
             if flag_V == '1':
                 v_edit.setStyleSheet("background-color: yellow; font-family: 'Open Sans', Verdana, Arial, sans-serif; font-size: 16px;")
-        if self.thread.isRunning():
+        else:
             self.worker.stop_run_code()
     def reset_highlight(self):
         for row in range(1, self.model_code.rowCount()):
@@ -1253,6 +1251,7 @@ class Ui_MainWindow(object):
             self.thread.start()
     
     def Quit(self):
+        self.worker.stop_run_code()
         self.show_code_edit()
         self.address = []
         self.memory_current_line = []

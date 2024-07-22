@@ -13,6 +13,7 @@ VALID_COMMAND_REGEX_MULTI = re.compile(r"(MUL|MLA|MLS|DIV)", re.IGNORECASE)
 VALID_COMMAND_BRANCH = re.compile(r"(B|BL)", re.IGNORECASE)
 VALID_COMMAND_STACKED = re.compile(r"(POP|PUSH)", re.IGNORECASE)
 VALID_COMMAND_SATURATE = re.compile(r"(SSAT|USAT)", re.IGNORECASE)
+VALID_COMMAND_REVERSE = re.compile(r"(REV|RBIT)", re.IGNORECASE)
 CONDITIONAL_MODIFIER_REGEX = re.compile(r"(EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)", re.IGNORECASE)
 SHIFT_REGEX = re.compile(r"(LSL|LSR|ASR|ROR|RRX)", re.IGNORECASE)
 FLAG_REGEX = re.compile(r"S", re.IGNORECASE)
@@ -69,6 +70,7 @@ def check_memory(self, line, address, lines, data_labels):
     match_instruction_single_data_tranfer = re.search(VALID_COMMAND_SINGLE_DATA_TRANFER, instruction)
     match_instruction_multi = re.search(VALID_COMMAND_REGEX_MULTI, instruction)
     match_instruction_saturate = re.search(VALID_COMMAND_SATURATE, instruction)
+    match_instruction_reverse = re.search(VALID_COMMAND_REVERSE, instruction)
     if match_instruction:
         instruction_clean = match_instruction.group(0)
         instruction = re.sub(match_instruction.group(0), "", instruction)
@@ -584,6 +586,30 @@ def check_memory(self, line, address, lines, data_labels):
         else:
             return memory
         return memory
+    elif match_instruction_reverse:
+        instruction_clean = match_instruction_reverse.group(0)
+        instruction = re.sub(match_instruction_reverse.group(0), "", instruction)
+        match_condition = re.search(CONDITIONAL_MODIFIER_REGEX, instruction)
+        if match_condition:
+            condition = match_condition.group(0)
+            instruction = re.sub(condition, "", instruction)
+        if not instruction:
+            memory = format(0, '32b')
+            if len(mem) == 1:
+                if regex_register.match(mem[0]):
+                    Rd = dict.register_memory_dict.get(reg)
+                    Rm = dict.register_memory_dict.get(mem[0])
+                    if instruction_clean.lower() == "rev":
+                        memory = "11111" + "010" + "1" + "001" + Rm + "1111" + Rd + "1" + "000" + Rm
+                    if instruction_clean.lower() == "rbit":
+                        memory = "11111" + "010" + "1" + "001" + Rm + "1111" + Rd + "1" + "010" + Rm
+                else:
+                    return memory
+            else:
+                return memory
+        else:
+            return memory
+        return memory
     else:
         return memory
     
@@ -667,7 +693,7 @@ def memory_stacked(self, line, lines, address, labels):
                 mems[0] = mems[0].strip('{')
                 mems[-1] = mems[-1].strip('}')
                 if len(mems) == 1:
-                    Rt = dict.register_memory_dict.get(mem[0])
+                    Rt = dict.register_memory_dict.get(mems[0])
                     push = "11111" + "00" + "0" + "0" + "10" + "0" + "1101"
                     memory = push + Rt + "1" + "101" + "00000100"
                 else:
@@ -690,13 +716,13 @@ def memory_stacked(self, line, lines, address, labels):
                 mems[0] = mems[0].strip('{')
                 mems[-1] = mems[-1].strip('}')
                 if len(mems) == 1:
-                    Rt = dict.register_memory_dict.get(mem[0])
+                    Rt = dict.register_memory_dict.get(mems[0])
                     pop = "11111" + "00" + "0" + "0" + "10" + "1" + "1101"
                     memory = pop + Rt + "1" + "011" + "00000100"
                 else:
                     pop = "11101" + "00" + "010" + "1" + "1" + "1101"
                     for mem in mems:
-                        if regex_register.match(mem):
+                        if regex_register.match(mem) or mem == "pc":
                             if mem in registers:
                                 registers[mem] = "1"
                         else:
